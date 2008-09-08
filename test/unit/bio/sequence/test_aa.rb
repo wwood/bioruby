@@ -86,6 +86,18 @@ module Bio
              "leucine", "leucine", "arginine", "tyrosine"]
       assert_equal(ary, @obj.names)
     end
+    
+    def test_ph_counts
+      # str = "RRLEHTFVFLRNFSLMLLRY"
+      assert_equal 1, @obj.acidic_count
+      assert_equal 5, @obj.basic_count
+    end
+    
+    def test_empty_ph_counts
+      @empty = Bio::Sequence::AA.new('')
+      assert_equal 0, @empty.acidic_count
+      assert_equal 0, @empty.basic_count      
+    end
 
   end
 

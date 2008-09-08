@@ -106,6 +106,10 @@ class AminoAcid
       'W' => 204.23,
       'Y' => 181.19,
     }
+    
+    
+    ACIDIC_AMINO_ACIDS = %w(D E)
+    BASIC_AMINO_ACIDS = %w(H K R)
 
     def weight(x = nil)
       if x
