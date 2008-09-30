@@ -960,12 +960,16 @@ class SPTR < EMBLDB
     unless key
       embl_dr
     else
+      if embl_dr[key]
       embl_dr[key].map {|x|
         {'Accession' => x[0],
          'Version' => x[1],
          ' ' => x[2],
          'Molecular Type' => x[3]}
       }
+      else
+        return []
+      end
     end
   end
 

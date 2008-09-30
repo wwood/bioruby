@@ -290,6 +290,10 @@ module Bio
       assert_equal(seq, @obj.seq)
       assert_equal(seq, @obj.aaseq)
     end
+    
+    def test_absent_dr
+      assert_equal [], @obj.dr('NOT_A_DATABASE')
+    end
 
   end # class TestSPTR
 
