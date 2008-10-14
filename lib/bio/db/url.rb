@@ -1,8 +1,3 @@
-# 
-# To change this template, choose Tools | Templates
-# and open the template in the editor.
- 
-
 module Bio
   # A module dedicated to providing URLs to common bioinformatic databases.
   module URLGenerators
