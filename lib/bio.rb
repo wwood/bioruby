@@ -70,6 +70,12 @@ module Bio
   autoload :NCBIDB,         'bio/db'
   autoload :KEGGDB,         'bio/db'
   autoload :EMBLDB,         'bio/db'
+  
+  
+  ### URL Generators
+  
+  autoload :URLGenerators,      'bio/db/url'
+  autoload :URL,                      'bio/db/url'
 
   ## GenBank/RefSeq/DDBJ
 
