@@ -1,20 +1,20 @@
 module Bio
 
-#
-# = bio/appl/psort.rb - PSORT, protein sorting site prediction systems
-#
-# Copyright::   Copyright (C) 2003-2006
-#               Mitsuteru C. Nakao <n@bioruby.org>
-# License::     The Ruby License
-#
-# $Id: psort.rb,v 1.13 2007/04/05 23:35:39 trevor Exp $
-#
+  #
+  # = bio/appl/psort.rb - PSORT, protein sorting site prediction systems
+  #
+  # Copyright::   Copyright (C) 2003-2006
+  #               Mitsuteru C. Nakao <n@bioruby.org>
+  # License::     The Ruby License
+  #
+  # $Id: psort.rb,v 1.13 2007/04/05 23:35:39 trevor Exp $
+  #
 
-require 'bio/appl/psort/report'
-autoload :FastaFormat, 'bio/db/fasta'
-autoload :Command, 'bio/command'
-require 'cgi'
-require 'uri'
+  require 'bio/appl/psort/report'
+  autoload :FastaFormat, 'bio/db/fasta'
+  autoload :Command, 'bio/command'
+  require 'cgi'
+  require 'uri'
 
   # == A client for PSORT WWW Server 
   #
@@ -199,7 +199,7 @@ require 'uri'
       def initialize(driver, origin = 'yeast', title = 'MYSEQ')
         @serv = driver
         @origin = origin  # Gram-positive bacterium, Gram-negative bacterium,
-                          # yeast, aminal, plant
+        # yeast, aminal, plant
         @title = title
         @sequence = ''
       end
@@ -429,7 +429,17 @@ require 'uri'
     end # class PSORTB
 
     class WoLF_PSORT
+      SUMMARY_EXECUTABLE_NAME = 'runWolfPsortSummary'
       
+      # Given an amino acid sequence as a String and an organism type (plasnt/animal/fungi) as a String,
+      # run a local version of WoLF_PSORT (which is assumed to be in the executable path) and
+      # return a parsed report
+      def self.exec_local_from_sequence(amino_acid_sequence_string, organism_type)
+        fasta = ">wolf\n#{amino_acid_sequence_string}"
+        
+        output = Bio::Command.query_command([SUMMARY_EXECUTABLE_NAME, organism_type], fasta)
+        return Bio::PSORT::WoLF_PSORT::Report.parse_from_summary(organism_type, output.split("\n")[1])
+      end  
     end # class WoLF_PSORT
 
   end # class PSORT
@@ -461,10 +471,10 @@ DYKKIGNPLP GMHIEADNEE EPEENDDDWD DDEDEAAQPP ANFAAVANNL
 KPTAAGSKID DDKVIKGFRN EKSPAQLWAE VSPPGSDVEK IIIIGWCPDS 
 APLKTRASFA PSSDIANLKN ESKLKRDSEF NSFLGTTKPP SMTESSLKND
 KAEEAEQPKT EIAPSLPSRN SIPAPKQEEA PEQAPEEEIE GN
-"
+  "
   Seq1 = ">hgoe
 LTFVENDKII NI
-"
+  "
 
   puts "\n Bio::PSORT::PSORT"
   
@@ -501,7 +511,7 @@ LTFVENDKII NI
   p report.methods
 
   methods = ['entry_id', 'origin', 'title', 'sequence','result_info',
-             'reasoning', 'final_result', 'raw']
+    'reasoning', 'final_result', 'raw']
   methods.each do |method|
     puts "\n ==> p report.#{method}"
     p eval("report.#{method}")
