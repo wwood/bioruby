@@ -12,6 +12,22 @@ module Bio
     def plasmodb_gene_url(plasmodb_id)
       "http://plasmodb.org/gene/#{plasmodb_id}"
     end
+    
+    def pdb_url(pdbId)
+      "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId=#{pdbId}"
+    end
+   
+    def pdbsum_url(pdbId)
+      "http://www.ebi.ac.uk/thornton-srv/databases/cgi-bin/pdbsum/GetPage.pl?pdbcode=#{pdbId}"
+    end
+   
+    def cath_url(pdbId)
+      "http://cathwww.biochem.ucl.ac.uk/cgi-bin/cath/SearchPdb.pl?query=#{pdbId}&type=PDB"
+    end
+   
+    def scop_url(pdbId)
+      "http://scop.mrc-lmb.cam.ac.uk/scop/pdb.cgi?disp=scop&id=#{pdbId}"
+    end
   end
   
   # Convenience class that allows easier creation of URLs.
