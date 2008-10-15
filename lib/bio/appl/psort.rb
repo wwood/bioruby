@@ -429,7 +429,8 @@ require 'uri'
     end # class PSORTB
 
     class WoLF_PSORT
-    end # class PSORTB
+      
+    end # class WoLF_PSORT
 
   end # class PSORT
 

@@ -70,7 +70,7 @@ module Bio
 
         # Constructs aBio::PSORT::PSORT1::Report object.
         def initialize(entry_id = '', origin = '', title = '', sequence = '',
-                       result_info = '', reasoning = {}, final_result = [])
+            result_info = '', reasoning = {}, final_result = [])
           @entry_id = entry_id
           @origin = origin
           @title = title
@@ -126,7 +126,7 @@ module Bio
         'caa',  # Prenylation motif: (2|1|0) CaaX,CXC,CC,nil
         'yqr',  # memYQRL: (found|none) $scr
         'tyr',  # Tyrosines in the tail: (none|\S+[,])  
-                # 10 * scalar(@ylist) / ($end - $start + 1);
+        # 10 * scalar(@ylist) / ($end - $start + 1);
         'leu',  # Dileucine motif in the tail: (none|found) $scr
         'gpi',  # >>> Seem to be GPI anchored
         'myr',  # NMYR: (none|\w) $scr
@@ -225,7 +225,7 @@ module Bio
 
         # Constructs aBio::PSORT::PSORT2::Report object.
         def initialize(raw = '', entry_id = nil, scl = nil, definition = nil, 
-                       seq = nil, k = nil, features = {}, prob = {}, pred = nil)
+            seq = nil, k = nil, features = {}, prob = {}, pred = nil)
           @entry_id   = entry_id
           @scl        = scl
           @definition = definition
@@ -406,6 +406,69 @@ module Bio
       end # class Report
  
     end # class PSORT2      
+    
+    
+    class WoLF_PSORT
+      LOCATIONS = [
+        'nucl',
+        'cyto',
+        'plas',
+        'cyto_plas'
+      ]
+      
+      class Report
+        attr_accessor :name
+        attr_accessor :organism_type
+        attr_accessor :nucl_score
+        attr_accessor :cyto_score
+        attr_accessor :plas_score
+        attr_accessor :cyto_plas_score
+        
+        def initialize(name=nil, organism_type=nil, nucl_score=nil, cyto_score=nil, plas_score=nil, cyto_plas_score=nil)
+          @name = name
+          @organism_type = organism_type
+          @nucl_score = nucl_score
+          @cyto_score = cyto_score
+          @plas_score = plas_score
+          @cyto_plas_score = cyto_plas_score
+        end
+      
+        # Given an output line from a the runWolfPsortSummary script,
+        # return a report with all the included information in it
+        def self.parse_from_summary(organism_type, line)
+          line.strip!
+          return nil if line.match(/^\#/) #ignore the first comment line
+          
+          rep = self.new
+          rep.organism_type = organism_type
+          
+          line.split(', ').each_with_index do |fraction, index|
+            splits = fraction.split(' ')
+            if index == 0
+              raise ArgumentError, "invalid format\n[#{line}]" if splits.length != 3
+              rep.name = splits[0]
+              raise ArgumentError, "invalid format\n[#{line}]" if !LOCATIONS.include?(splits[1])
+              rep.send("#{splits[1]}_score=".to_sym, splits[2].to_i)
+            else
+              raise ArgumentError, "invalid format\n[#{line}]" if splits.length != 2
+              raise ArgumentError, "invalid format\n[#{line}]" if !LOCATIONS.include?(splits[0])
+              rep.send("#{splits[0]}_score=".to_sym, splits[1].to_i)
+            end
+          end
+          
+          return rep
+        end
+        
+        # Equivalence to another WoLF_PSORT report. Written mainly 
+        # with testing in mind
+        def ==(another)
+          [:organism_type, :nucl_score, :cyto_score, :plas_score, :cyto_plas_score, :name].each do |attr|
+            return false if self.send(attr) != another.send(attr)
+          end
+          return true
+        end
+      end # class Report
+    end # class WoLF_PSORT
 
   end # class PSORT
 
