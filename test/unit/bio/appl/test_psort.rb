@@ -44,4 +44,9 @@ EYGERVARAIGLPTAACYPAKM*'.gsub(/\s/,''),
       'plant'
     )
   end
+  
+    def test_highest_predicted_localization
+    assert_equal 'cyto', Bio::PSORT::WoLF_PSORT::Report.new('gcn5a', 'plant', {'cyto' => 17, 'nucl' => 9, 'cyto_pero' => 9}).highest_predicted_localization
+    assert_equal 'cyto_pero', Bio::PSORT::WoLF_PSORT::Report.new('gcn5a', 'plant', {'cyto' => 17, 'nucl' => 9, 'cyto_pero' => 90}).highest_predicted_localization
+  end
 end
