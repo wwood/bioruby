@@ -429,15 +429,23 @@ module Bio
     end # class PSORTB
 
     class WoLF_PSORT
+      ORGANISM_TYPES = %w(plant animal fungi)
+      
       SUMMARY_EXECUTABLE_NAME = 'runWolfPsortSummary'
       
       # Given an amino acid sequence as a String and an organism type (plasnt/animal/fungi) as a String,
       # run a local version of WoLF_PSORT (which is assumed to be in the executable path) and
-      # return a parsed report
+      # return a parsed report. Return nil if something untoward happens. 
+      # 
+      # A known problem is that it doesn't
+      # work on sequences that are too short. For instance the sequence MRTLKTEVEKGFLSTMFVQELATPKG
+      # prints out an error on the command line:
+      # Modification of non-creatable array value attempted, subscript -1 at /home/ben/bioinfo/WoLFPSORT_package_v0.2/bin/psortModifiedForWolfFiles/psortModules/PsortFastaReader.pm line 440, <STDIN> line 1.
       def self.exec_local_from_sequence(amino_acid_sequence_string, organism_type)
         fasta = ">wolf\n#{amino_acid_sequence_string}"
         
         output = Bio::Command.query_command([SUMMARY_EXECUTABLE_NAME, organism_type], fasta)
+        return nil if output == '' # happens when the sequence is too short
         return Bio::PSORT::WoLF_PSORT::Report.parse_from_summary(organism_type, output.split("\n")[1])
       end  
     end # class WoLF_PSORT
