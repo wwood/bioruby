@@ -46,7 +46,7 @@ EYGERVARAIGLPTAACYPAKM*'.gsub(/\s/,''),
   end
   
   def test_too_small_amino_acid_sequence_prediction
-    # known problem - too short?
+    # known problem - too short for WoLF_PSORT?
     assert_nil Bio::PSORT::WoLF_PSORT.exec_local_from_sequence('MRTLKTEVEKGFLSTMFVQELATPKG', 'animal')
   end
   
