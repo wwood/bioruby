@@ -409,11 +409,25 @@ module Bio
     
     
     class WoLF_PSORT
+      # taken from http://wolfpsort.org/aboutWoLF_PSORT.html.en
       LOCATIONS = [
-        'nucl',
+        'chlo',
         'cyto',
+        'cysk',
+        'E.R.',
+        'extr',
+        'golg',
+        'lyso',
+        'mito',
+        'nucl',
+        'pero',
         'plas',
-        'cyto_plas'
+        'vacu' 
+      ]
+      ORGANISM_TYPES = [
+        'animal',
+        'plant',
+        'fungi'
       ]
       
       class Report
