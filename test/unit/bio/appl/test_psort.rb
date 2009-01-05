@@ -32,7 +32,7 @@ class WoLFPsortTest < Test::Unit::TestCase
     # catalase pero 8, nucl 2, mito 1.5, cyto_nucl 1.5, mito_plas 1.5
     assert_equal Bio::PSORT::WoLF_PSORT::Report.new('wolf', 'plant', {'pero' => 8.0, 'nucl' => 2.0, 'mito' => 1.5, 'mito_plas' => 1.5, 'cyto_nucl' => 1.5}),
       Bio::PSORT::WoLF_PSORT.exec_local_from_sequence(
-    'MTQVPPVTFQQYGPVITTSAGNPVDDNQNSVTAGPYGPAILSNFHLIDKLAHFDRERIPE
+      'MTQVPPVTFQQYGPVITTSAGNPVDDNQNSVTAGPYGPAILSNFHLIDKLAHFDRERIPE
 RVVHAKGGGAFGYFEVTHDITRFCKAKLFEKIGKRTPVFARFSTVAGESGSADTRRDPRG
 FALKFYTEEGNWDMVGNNTPIFFVRDAIKFPDFIHTQKRHPQTHLHDPNMVWDFFSLVPE
 SVHQVTFLYTDRGTPDGFRHMNGYGSHTFKFINKDNEAFYVKWHFKTNQGIKNLNRQRAK
@@ -43,5 +43,15 @@ VACHPQEHPNSDFEQPGNFYRTVLSEPEREALIGNIAEHLRQARRDIQERQVKIFYKCDP
 EYGERVARAIGLPTAACYPAKM*'.gsub(/\s/,''),
       'plant'
     )
+  end
+  
+  def test_too_small_amino_acid_sequence_prediction
+    # known problem - too short for WoLF_PSORT?
+    assert_nil Bio::PSORT::WoLF_PSORT.exec_local_from_sequence('MRTLKTEVEKGFLSTMFVQELATPKG', 'animal')
+  end
+  
+  def test_highest_predicted_localization
+    assert_equal 'cyto', Bio::PSORT::WoLF_PSORT::Report.new('gcn5a', 'plant', {'cyto' => 17, 'nucl' => 9, 'cyto_pero' => 9}).highest_predicted_localization
+    assert_equal 'cyto_pero', Bio::PSORT::WoLF_PSORT::Report.new('gcn5a', 'plant', {'cyto' => 17, 'nucl' => 9, 'cyto_pero' => 90}).highest_predicted_localization
   end
 end
