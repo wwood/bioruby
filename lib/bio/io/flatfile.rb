@@ -460,6 +460,15 @@ module Bio
     def self.autodetect(text)
       AutoDetect.default.autodetect(text)
     end
+    
+    # Return a hash of the entries, where the names of the 
+    def to_hash(indexing_method = :entry_id)
+      hash = {}
+      each do |entry|
+        hash[entry.send(indexing_method)] = entry
+      end
+      hash
+    end
 
   end #class FlatFile
 
