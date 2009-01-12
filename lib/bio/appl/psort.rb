@@ -1,20 +1,20 @@
 module Bio
 
-  #
-  # = bio/appl/psort.rb - PSORT, protein sorting site prediction systems
-  #
-  # Copyright::   Copyright (C) 2003-2006
-  #               Mitsuteru C. Nakao <n@bioruby.org>
-  # License::     The Ruby License
-  #
-  # $Id: psort.rb,v 1.13 2007/04/05 23:35:39 trevor Exp $
-  #
+#
+# = bio/appl/psort.rb - PSORT, protein sorting site prediction systems
+#
+# Copyright::   Copyright (C) 2003-2006
+#               Mitsuteru C. Nakao <n@bioruby.org>
+# License::     The Ruby License
+#
+# $Id:$
+#
 
-  require 'bio/appl/psort/report'
-  autoload :FastaFormat, 'bio/db/fasta'
-  autoload :Command, 'bio/command'
-  require 'cgi'
-  require 'uri'
+require 'bio/appl/psort/report'
+autoload :FastaFormat, 'bio/db/fasta'
+autoload :Command, 'bio/command'
+require 'cgi'
+require 'uri'
 
   # == A client for PSORT WWW Server 
   #
@@ -111,7 +111,7 @@ module Bio
         begin
           result = nil
           Bio::Command.start_http(@uri.host) {|http|
-            result, = http.post(@uri.path, data)
+            result = http.post(@uri.path, data)
           }
           @report = result.body
           output = parse_report(@report)

@@ -5,7 +5,7 @@ Copyright (C) 2001-2007 Toshiaki Katayama <k@bioruby.org>
 
 BioRuby is an open source Ruby library for developing bioinformatics
 software.  Object oriented scripting language Ruby has many features
-suitable for bioinfomatics research, for example, clear syntax to
+suitable for bioinformatics research, for example, clear syntax to
 express complex objects, regular expressions for text handling as
 powerful as Perl's, a wide variety of libraries including web service
 etc.  As the syntax of the Ruby language is simple and very clean, we
@@ -17,19 +17,19 @@ files, internet web servers and local relational databases.  These
 database entries can be parsed to extract information you need.
 Biological sequences can be treated with the fulfilling methods of the
 Ruby's String class and with regular expressions.  Daily tools like
-Blast, Fasta, Hmmer and many other softwares for the biological
+Blast, Fasta, Hmmer and many other software packages for biological
 analysis can be executed within the BioRuby script, and the results
 can be fully parsed to extract the portion you need.  BioRuby supports
 major biological database formats and provides many ways for accessing
 them through flatfile indexing, SQL, web services etc.  Various web
-services including KEGG API can be easily utilized by the BioRuby.
+services including KEGG API can be easily utilized by BioRuby.
 
 
 == FOR MORE INFORMATION
 
 BioRuby's official website is at ((<URL:http://bioruby.org/>)).
-You will find links to the related resouces including downloads,
-mailing lists, Wiki documentations etc. in the top page.
+You will find links to related resources including downloads,
+mailing lists, Wiki documentation etc. in the top page.
 
   * ((<URL:http://bioruby.org/>))
 
@@ -76,7 +76,7 @@ the BioRuby package is also available for easy installation.
 == REQUIREMENTS
 
 * Ruby 1.8.2 or later -- ((<URL:http://www.ruby-lang.org/>))
-  (Ruby 1.8.4 or later is recommended)
+  (Ruby 1.8.5 or later is recommended)
 
 == OPTIONAL REQUIREMENTS
 
@@ -94,34 +94,51 @@ Creating faster flatfile index using Berkley DB:
 
 Accessing BioSQL database created by other Open Bio* libraries:
 
-  * [RAA:ruby-dbi] and at least one driver from [RAA:mysql-ruby],
-    [RAA:postgres], [RAA:oracle]
+  * ActiveRecord ((<URL:http://rubyforge.org/projects/activerecord/>))
+    and at least one driver (or adapter) from MySQL/Ruby
+    ((<URL:http://rubyforge.org/projects/mysql-ruby/>)),
+    postgres-pr ((<URL:http://rubyforge.org/projects/postgres-pr>)),
+    or ActiveRecord Oracle enhanced adapter
+    ((<URL:http://rubyforge.org/projects/oracle-enhanced/>)).
+  * For BioRuby 1.2.1 or older version, Ruby/DBI
+    ((<URL:http://rubyforge.org/projects/ruby-dbi>) and
+    at least one driver from MySQL/Ruby, postgres-pr, or
+    ruby-oci8 ((<URL:http://http://ruby-oci8.rubyforge.org/>))
+    (note that ruby-oci8 can only work with ruby-dbi 0.2.2).
 
 
 == INSTALL
 
-In the bioruby source directory (such as bioruby-x.x.x/), run install.rb
+In the bioruby source directory (such as bioruby-x.x.x/), run setup.rb
 as follows:
 
-  % ruby install.rb config
-  % ruby install.rb setup
   % su
-  # ruby install.rb install
+  # ruby setup.rb
+
+These simple step installs this program under the default location of
+Ruby libraries.  You can also install files into your favorite directory
+by supplying setup.rb some options. Try "ruby setup.rb --help".
 
 If your operating system supports 'sudo' command (such as Mac OS X),
 try the following procedure instead of the above.
 
-  % ruby install.rb config
-  % ruby install.rb setup
-  % sudo ruby install.rb install
+  % sudo ruby setup.rb
+
+For older version users: "install.rb" is now renamed to "setup.rb".
+The options "config", "setup", and "install" are still available.
+
+  % ruby setup.rb config
+  % ruby setup.rb setup
+  % su
+  # ruby setup.rb install
 
 You can run tests by
 
-  % ruby install.rb test
+  % ruby setup.rb test
 
 and run
 
-  % ruby install.rb --help
+  % ruby setup.rb --help
 
 for more details.
 
@@ -135,7 +152,7 @@ If you are using RubyGems, just type
 == SETUP
 
 If you want to use the OBDA (Open Bio Database Access) to obtain database
-entries, copy a sample configtation file in the BioRuby distribution
+entries, copy a sample configuration file in the BioRuby distribution
 
   bioruby-x.x.x/etc/bioinformatics/seqdatabase.ini
 
@@ -147,8 +164,8 @@ or
 
   ~/.bioinformatics/seqdatabase.ini	(personal configuration)
 
-and chage the contens according to your preference.  For more
-informations on the OBDA, see ((<URL:http://obda.open-bio.org/>)).
+and change the contents according to your preference.  For more
+information on the OBDA, see ((<URL:http://obda.open-bio.org/>)).
 
 
 == USAGE
@@ -160,13 +177,13 @@ separate the name space.
   #!/usr/bin/env ruby
   require 'bio'
 
-Also read other documentations in the 'doc' directory.
+You can also read other documentation in the 'doc' directory.
 
   bioruby-x.x.x/doc/
 
 --- RubyGems
 
-In RubyGems, you need to load 'rubygems' library before using 'bio'.
+With RubyGems, you need to load 'rubygems' library before using 'bio'.
 
   #!/usr/bin/env ruby
   require 'rubygems'
@@ -177,12 +194,12 @@ In RubyGems, you need to load 'rubygems' library before using 'bio'.
 
 BioRuby can be freely distributed under the same terms as Ruby.
 
-Note that, install.rb included in the BioRuby package comes from
-[RAA:setup] developed by Minero Aoki, and modified by Moses Hohman.
+Note that setup.rb included in the BioRuby package comes from
+[RAA:setup] developed by Minero Aoki.
 
 
 == CONTACT
 
-Current staffs of the BioRuby project can be reached by sending e-mail
+Current staff of the BioRuby project can be reached by sending e-mail
 to <staff@bioruby.org>.
 
