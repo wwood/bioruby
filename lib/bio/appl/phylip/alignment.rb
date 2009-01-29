@@ -82,10 +82,6 @@ module Bio
         end
         first_block.each_with_index do |x, i|
           n, s = x.split(/ +/, 2)
-          if s.nil? # if there is no space separator, assume 10 character name
-            n = x[0..9]
-            s = x[10..(x.length-1)]
-          end
           @sequence_names[i] = n
           @sequences[i].replace(s.gsub(/\s+/, ''))
         end

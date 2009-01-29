@@ -429,7 +429,18 @@ require 'uri'
     end # class PSORTB
 
     class WoLF_PSORT
-    end # class PSORTB
+      SUMMARY_EXECUTABLE_NAME = 'runWolfPsortSummary'
+      
+      # Given an amino acid sequence as a String and an organism type (plasnt/animal/fungi) as a String,
+      # run a local version of WoLF_PSORT (which is assumed to be in the executable path) and
+      # return a parsed report
+      def self.exec_local_from_sequence(amino_acid_sequence_string, organism_type)
+        fasta = ">wolf\n#{amino_acid_sequence_string}"
+        
+        output = Bio::Command.query_command([SUMMARY_EXECUTABLE_NAME, organism_type], fasta)
+        return Bio::PSORT::WoLF_PSORT::Report.parse_from_summary(organism_type, output.split("\n")[1])
+      end  
+    end # class WoLF_PSORT
 
   end # class PSORT
 
