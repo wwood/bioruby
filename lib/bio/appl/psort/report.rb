@@ -481,6 +481,14 @@ module Bio
           end
           return true
         end
+        
+        # Return the string of the highest predicted localisation
+        # recorded in the score hash
+        def highest_predicted_localization
+          @score_hash.max{ |a,b|
+            a[1] <=> b[1]
+          }[0]
+        end
       end # class Report
     end # class WoLF_PSORT
 
