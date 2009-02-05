@@ -429,6 +429,7 @@ require 'uri'
     end # class PSORTB
 
     class WoLF_PSORT
+      ORGANISM_TYPES = %w(plant animal fungi)
       SUMMARY_EXECUTABLE_NAME = 'runWolfPsortSummary'
       
       # Given an amino acid sequence as a String and an organism type (plasnt/animal/fungi) as a String,
