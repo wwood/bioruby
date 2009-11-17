@@ -28,6 +28,10 @@ module Bio
     def scop_url(pdbId)
       "http://scop.mrc-lmb.cam.ac.uk/scop/pdb.cgi?disp=scop&id=#{pdbId}"
     end
+
+    def pubmed_url(pubmed_id)
+      "http://www.ncbi.nlm.nih.gov/PubMed?term=#{pubmed_id}"
+    end
   end
   
   # Convenience class that allows easier creation of URLs.
