@@ -436,7 +436,7 @@ module Bio
         end
       
         # Given an output line from a the runWolfPsortSummary script,
-        # return a report with all the included information in it
+        # return a report with all the included information in it.
         def self.parse_from_summary(organism_type, line)
           line.strip!
           return nil if line.match(/^\#/) #ignore the first comment line

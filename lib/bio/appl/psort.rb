@@ -445,7 +445,7 @@ module Bio
         fasta = ">wolf\n#{amino_acid_sequence_string}"
         
         output = Bio::Command.query_command([SUMMARY_EXECUTABLE_NAME, organism_type], fasta)
-        return nil if output == '' # happens when the sequence is too short
+        return nil if output == '' or output.nil? # happens when the sequence is too short
         return Bio::PSORT::WoLF_PSORT::Report.parse_from_summary(organism_type, output.split("\n")[1])
       end  
     end # class WoLF_PSORT
