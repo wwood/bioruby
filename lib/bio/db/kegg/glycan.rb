@@ -4,10 +4,11 @@
 # Copyright::  Copyright (C) 2004 Toshiaki Katayama <k@bioruby.org>
 # License::    The Ruby License
 #
-# $Id: glycan.rb,v 1.7 2007/12/14 16:20:38 k Exp $
+# $Id:$
 #
 
 require 'bio/db'
+require 'bio/db/kegg/common'
 
 module Bio
 class KEGG
@@ -16,6 +17,21 @@ class GLYCAN < KEGGDB
 
   DELIMITER	= RS = "\n///\n"
   TAGSIZE	= 12
+
+  include Common::DblinksAsHash
+  # Returns a Hash of the DB name and an Array of entry IDs in DBLINKS field.
+  def dblinks_as_hash; super; end if false #dummy for RDoc
+  alias dblinks dblinks_as_hash
+
+  include Common::PathwaysAsHash
+  # Returns a Hash of the pathway ID and name in PATHWAY field.
+  def pathways_as_hash; super; end if false #dummy for RDoc
+  alias pathways pathways_as_hash
+
+  include Common::OrthologsAsHash
+  # Returns a Hash of the orthology ID and definition in ORTHOLOGY field.
+  def orthologs_as_hash; super; end if false #dummy for RDoc
+  alias orthologs orthologs_as_hash
 
   def initialize(entry)
     super(entry, TAGSIZE)
@@ -46,11 +62,7 @@ class GLYCAN < KEGGDB
   # MASS
   def mass
     unless @data['MASS']
-      hash = Hash.new
-      fetch('MASS').scan(/(\S+)\s+\((\S+)\)/).each do |val, key|
-        hash[key] = val.to_f
-      end
-      @data['MASS'] = hash
+      @data['MASS'] = field_fetch('MASS')[/[\d\.]+/].to_f
     end
     @data['MASS']
   end
@@ -77,7 +89,7 @@ class GLYCAN < KEGGDB
   end
 
   # PATHWAY
-  def pathways
+  def pathways_as_strings
     lines_fetch('PATHWAY') 
   end
 
@@ -95,7 +107,7 @@ class GLYCAN < KEGGDB
   end
 
   # ORTHOLOGY
-  def orthologs
+  def orthologs_as_strings
     unless @data['ORTHOLOGY']
       @data['ORTHOLOGY'] = lines_fetch('ORTHOLOGY')
     end
@@ -130,7 +142,7 @@ class GLYCAN < KEGGDB
   end
 
   # DBLINKS
-  def dblinks
+  def dblinks_as_strings
     unless @data['DBLINKS']
       @data['DBLINKS'] = lines_fetch('DBLINKS')
     end
@@ -146,25 +158,4 @@ end # GLYCAN
 
 end # KEGG
 end # Bio
-
-
-if __FILE__ == $0
-  entry = ARGF.read	# gl:G00024
-  gl = Bio::KEGG::GLYCAN.new(entry)
-  p gl.entry_id
-  p gl.name
-  p gl.composition
-  p gl.mass
-  p gl.keggclass
-  p gl.bindings
-  p gl.compounds
-  p gl.reactions
-  p gl.pathways
-  p gl.enzymes
-  p gl.orthologs
-  p gl.references
-  p gl.dblinks
-  p gl.kcf
-end
-
 

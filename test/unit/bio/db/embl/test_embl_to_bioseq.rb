@@ -1,28 +1,28 @@
 #
-# test/unit/bio/db/embl/test_embl.rb - Unit test for Bio::EMBL
+# test/unit/bio/db/embl/test_embl_to_bioseq.rb - Unit test for Bio::EMBL to Bio::Sequence data converter
 #
 # Copyright::  Copyright (C) 2005, 2008
 #                 Mitsuteru Nakao <n@bioruby.org>
 #                 Jan Aerts <jan.aerts@bbsrc.ac.uk>
 # License::    The Ruby License
 #
-#  $Id: test_embl_to_bioseq.rb,v 1.1.2.2 2008/06/17 16:09:53 ngoto Exp $
+#  $Id:$
 #
 
+# loading helper routine for testing bioruby
 require 'pathname'
-libpath = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 5, 'lib')).cleanpath.to_s
-$:.unshift(libpath) unless $:.include?(libpath)
+load Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 4,
+                            'bioruby_test_helper.rb')).cleanpath.to_s
 
+# libraries needed for the tests
 require 'test/unit'
-require 'bio'
 require 'bio/db/embl/embl'
 
 module Bio
   class TestEMBLToBioSequence < Test::Unit::TestCase
     
     def setup
-      bioruby_root = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 5)).cleanpath.to_s
-      input = File.open(File.join(bioruby_root, 'test', 'data', 'embl', 'AB090716.embl.rel89')).read
+      input = File.read(File.join(BioRubyTestDataPath, 'embl', 'AB090716.embl.rel89'))
       embl_object = Bio::EMBL.new(input)
       embl_object.instance_eval { @data['OS'] = "Haplochromis sp. 'muzu rukwa'" }
       @bio_seq = embl_object.to_biosequence
@@ -112,8 +112,7 @@ module Bio
   # that Bio::Sequence can be made into a valid Bio::EMBL again.
   class TestEMBLToBioSequenceRoundTrip < Test::Unit::TestCase
     def setup
-      bioruby_root = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 5)).cleanpath.to_s
-      input = File.open(File.join(bioruby_root, 'test', 'data', 'embl', 'AB090716.embl.rel89')).read
+      input = File.read(File.join(BioRubyTestDataPath, 'embl', 'AB090716.embl.rel89'))
       embl_object_1 = Bio::EMBL.new(input)
       embl_object_1.instance_eval { @data['OS'] = "Haplochromis sp. 'muzu rukwa'" }
       @bio_seq_1 = embl_object_1.to_biosequence
@@ -194,7 +193,7 @@ module Bio
       assert_equal(Bio::Reference, @bio_seq_2.references[0].class)
     end
     
-    def test_features a
+    def test_features
       assert_equal(3, @bio_seq_2.features.length)
       assert_equal(Bio::Feature, @bio_seq_2.features[0].class)
     end

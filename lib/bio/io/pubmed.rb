@@ -5,12 +5,12 @@
 # Copyright::  Copyright (C) 2006 Jan Aerts <jan.aerts@bbsrc.ac.uk>
 # License::    The Ruby License
 #
-# $Id: pubmed.rb,v 1.24 2008/02/19 03:36:52 k Exp $
+# $Id:$
 #
 
 require 'bio/io/ncbirest'
 require 'bio/command'
-require 'cgi' unless defined?(CGI)
+require 'cgi'
 
 module Bio
 
@@ -117,7 +117,11 @@ class PubMed < Bio::NCBI::REST
   def efetch(ids, hash = {})
     opts = { "db" => "pubmed", "rettype"  => "medline" }
     opts.update(hash)
-    super(ids, opts)
+    result = super(ids, opts)
+    if !opts["retmode"] or opts["retmode"] == "text"
+      result = result.split(/\n\n+/)
+    end
+    result
   end
 
   # Search the PubMed database by given keywords using entrez query and returns
@@ -134,7 +138,7 @@ class PubMed < Bio::NCBI::REST
     ncbi_access_wait
 
     http = Bio::Command.new_http(host)
-    response, = http.get(path + CGI.escape(str))
+    response = http.get(path + CGI.escape(str))
     result = response.body
     result = result.scan(/value="(\d+)" id="UidCheckBox"/m).flatten
     return result
@@ -149,12 +153,12 @@ class PubMed < Bio::NCBI::REST
   def query(*ids)
     host = "www.ncbi.nlm.nih.gov"
     path = "/sites/entrez?tool=bioruby&cmd=Text&dopt=MEDLINE&db=PubMed&uid="
-    list = ids.join(",")
+    list = ids.collect { |x| CGI.escape(x.to_s) }.join(",")
 
     ncbi_access_wait
 
     http = Bio::Command.new_http(host)
-    response, = http.get(path + list)
+    response = http.get(path + list)
     result = response.body
     result = result.scan(/<pre>\s*(.*?)<\/pre>/m).flatten
 
@@ -183,7 +187,7 @@ class PubMed < Bio::NCBI::REST
     ncbi_access_wait
 
     http = Bio::Command.new_http(host)
-    response, = http.get(path + id.to_s)
+    response = http.get(path + CGI.escape(id.to_s))
     result = response.body
     if result =~ /#{id}\s+Error/
       raise( result )
@@ -217,91 +221,3 @@ end # PubMed
 
 end # Bio
 
-
-if __FILE__ == $0
-
-  puts "=== instance methods ==="
-
-  pubmed = Bio::PubMed.new
-
-  puts "--- Search PubMed by E-Utils ---"
-  opts = {"rettype" => "count"}
-  puts Time.now
-  puts pubmed.esearch("(genome AND analysis) OR bioinformatics", opts)
-  puts Time.now
-  puts pubmed.esearch("(genome AND analysis) OR bioinformatics", opts)
-  puts Time.now
-  puts pubmed.esearch("(genome AND analysis) OR bioinformatics", opts)
-  puts Time.now
-  pubmed.esearch("(genome AND analysis) OR bioinformatics").each do |x|
-    puts x
-  end
-
-  puts "--- Retrieve PubMed entry by E-Utils ---"
-  puts Time.now
-  puts pubmed.efetch(16381885)
-  puts Time.now
-  puts pubmed.efetch("16381885")
-  puts Time.now
-  puts pubmed.efetch("16381885")
-  puts Time.now
-  opts = {"retmode" => "xml"}
-  puts pubmed.efetch([10592173, 14693808], opts)
-  puts Time.now
-  puts pubmed.efetch(["10592173", "14693808"], opts)
-
-  puts "--- Search PubMed by Entrez CGI ---"
-  pubmed.search("(genome AND analysis) OR bioinformatics").each do |x|
-    p x
-  end
-
-  puts "--- Retrieve PubMed entry by Entrez CGI ---"
-  puts pubmed.query("16381885")
-
-
-  puts "--- Retrieve PubMed entry by PMfetch ---"
-  puts pubmed.pmfetch("16381885")
-
-
-  puts "=== class methods ==="
-
-
-  puts "--- Search PubMed by E-Utils ---"
-  opts = {"rettype" => "count"}
-  puts Time.now
-  puts Bio::PubMed.esearch("(genome AND analysis) OR bioinformatics", opts)
-  puts Time.now
-  puts Bio::PubMed.esearch("(genome AND analysis) OR bioinformatics", opts)
-  puts Time.now
-  puts Bio::PubMed.esearch("(genome AND analysis) OR bioinformatics", opts)
-  puts Time.now
-  Bio::PubMed.esearch("(genome AND analysis) OR bioinformatics").each do |x|
-    puts x
-  end
-
-  puts "--- Retrieve PubMed entry by E-Utils ---"
-  puts Time.now
-  puts Bio::PubMed.efetch(16381885)
-  puts Time.now
-  puts Bio::PubMed.efetch("16381885")
-  puts Time.now
-  puts Bio::PubMed.efetch("16381885")
-  puts Time.now
-  opts = {"retmode" => "xml"}
-  puts Bio::PubMed.efetch([10592173, 14693808], opts)
-  puts Time.now
-  puts Bio::PubMed.efetch(["10592173", "14693808"], opts)
-
-  puts "--- Search PubMed by Entrez CGI ---"
-  Bio::PubMed.search("(genome AND analysis) OR bioinformatics").each do |x|
-    p x
-  end
-
-  puts "--- Retrieve PubMed entry by Entrez CGI ---"
-  puts Bio::PubMed.query("16381885")
-
-
-  puts "--- Retrieve PubMed entry by PMfetch ---"
-  puts Bio::PubMed.pmfetch("16381885")
-
-end

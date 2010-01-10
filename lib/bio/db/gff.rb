@@ -11,6 +11,7 @@
 #
 require 'uri'
 require 'strscan'
+require 'enumerator'
 require 'bio/db/fasta'
 
 module Bio
@@ -243,8 +244,16 @@ module Bio
         # (private) escapes GFF2 free text string
         def escape_gff2_freetext(str)
           '"' + str.gsub(UNSAFE_GFF2) do |x|
-            "\\" + (CHAR2BACKSLASH_EXTENDED[x] || sprintf("%03o", x[0]))
+            "\\" + (CHAR2BACKSLASH_EXTENDED[x] || char2octal(x))
           end + '"'
+        end
+
+        # (private) "x" => "\\oXXX"
+        # "x" must be a letter.
+        # If "x" is consisted of two bytes or more, joined with "\\".
+        def char2octal(x)
+          x.enum_for(:each_byte).collect { |y|
+            sprintf("%03o", y) }.join("\\")
         end
  
         # (private) escapes GFF2 attribute value string
@@ -268,7 +277,7 @@ module Bio
           str = str.to_s
           str = str.empty? ? '.' : str
           str = str.gsub(PROHIBITED_GFF2_COLUMNS) do |x|
-            "\\" + (CHAR2BACKSLASH[x] || sprintf("%03o", x[0]))
+            "\\" + (CHAR2BACKSLASH[x] || char2octal(x))
           end
           if str[0, 1] == '#' then
             str[0, 1] = "\\043"
@@ -281,7 +290,7 @@ module Bio
           str = str.to_s
           str = str.empty? ? '.' : str
           str = str.gsub(PROHIBITED_GFF2_TAGS) do |x|
-            "\\" + (CHAR2BACKSLASH[x] || sprintf("%03o", x[0]))
+            "\\" + (CHAR2BACKSLASH[x] || char2octal(x))
           end
           if str[0, 1] == '#' then
             str[0, 1] = "\\043"
@@ -1072,12 +1081,12 @@ module Bio
 
         # shortcut to the ID attribute
         def id
-          @attributes['ID']
+          get_attribute('ID')
         end
 
         # set ID attribute
         def id=(str)
-          @attributes['ID'] = str
+          set_attribute('ID', str)
         end
 
         # aliases for Column 1 (formerly "seqname")
@@ -1818,20 +1827,3 @@ module Bio
 
 end # module Bio
 
-
-if __FILE__ == $0
-  begin
-    require 'pp'
-    alias p pp
-  rescue LoadError
-  end
-
-  this_gff =  "SEQ1\tEMBL\tatg\t103\t105\t.\t+\t0\n"
-  this_gff << "SEQ1\tEMBL\texon\t103\t172\t.\t+\t0\n"
-  this_gff << "SEQ1\tEMBL\tsplice5\t172\t173\t.\t+\t.\n"
-  this_gff << "SEQ1\tnetgene\tsplice5\t172\t173\t0.94\t+\t.\n"
-  this_gff << "SEQ1\tgenie\tsp5-20\t163\t182\t2.3\t+\t.\n"
-  this_gff << "SEQ1\tgenie\tsp5-10\t168\t177\t2.1\t+\t.\n"
-  this_gff << "SEQ1\tgrail\tATG\t17\t19\t2.1\t-\t0\n"
-  p Bio::GFF.new(this_gff)
-end

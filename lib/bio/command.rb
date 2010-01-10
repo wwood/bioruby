@@ -12,7 +12,10 @@
 require 'open3'
 require 'uri'
 require 'open-uri'
+require 'cgi'
 require 'net/http'
+require 'tmpdir'
+require 'fileutils'
 
 module Bio
 
@@ -130,16 +133,21 @@ module Command
   # Executes the program.  Automatically select popen for Windows
   # environment and fork for the others.
   # A block must be given. An IO object is passed to the block.
+  #
+  # Available options:
+  #   :chdir => "path" : changes working directory to the specified path.
+  #
   # ---
   # *Arguments*:
   # * (required) _cmd_: Array containing String objects
+  # * (optional) _options_: Hash
   # *Returns*:: (undefined)
-  def call_command(cmd, &block) #:yields: io
+  def call_command(cmd, options = {}, &block) #:yields: io
     case RUBY_PLATFORM
     when /mswin32|bccwin32/
-      call_command_popen(cmd, &block)
+      call_command_popen(cmd, options, &block)
     else
-      call_command_fork(cmd, &block)
+      call_command_fork(cmd, options, &block)
     end
   end
 
@@ -148,9 +156,26 @@ module Command
   # ---
   # *Arguments*:
   # * (required) _cmd_: Array containing String objects
+  # * (optional) _options_: Hash
   # *Returns*:: (undefined)
-  def call_command_popen(cmd)
+  def call_command_popen(cmd, options = {})
     str = make_command_line(cmd)
+    # processing options
+    if dir = options[:chdir] then
+      case RUBY_PLATFORM
+      when /mswin32|bccwin32/
+        # Unix-like dir separator is changed to Windows dir separator
+        # by using String#gsub.
+        dirstr = dir.gsub(/\//, "\\")
+        chdirstr = make_command_line([ 'cd', '/D', dirstr ])
+        str = chdirstr + ' && ' + str
+      else
+        # UNIX shell
+        chdirstr = make_command_line([ 'cd', dir ])
+        str = chdirstr + ' && ' + str
+      end
+    end
+    # call command by using IO.popen
     IO.popen(str, "w+") do |io|
       io.sync = true
       yield io
@@ -166,8 +191,10 @@ module Command
   # ---
   # *Arguments*:
   # * (required) _cmd_: Array containing String objects
+  # * (optional) _options_: Hash
   # *Returns*:: (undefined)
-  def call_command_fork(cmd)
+  def call_command_fork(cmd, options = {})
+    dir = options[:chdir]
     cmd = safe_command_line_array(cmd)
     IO.popen("-", "r+") do |io|
       if io then
@@ -175,6 +202,13 @@ module Command
         yield io
       else
         # child
+        # chdir to options[:chdir] if available
+        begin
+          Dir.chdir(dir) if dir
+        rescue Exception
+          Process.exit!(1)
+        end
+        # executing the command
         begin
           Kernel.exec(*cmd)
         rescue Errno::ENOENT, Errno::EACCES
@@ -208,17 +242,21 @@ module Command
   # 
   # Automatically select popen for Windows environment and fork for the others.
   #
+  # Available options:
+  #   :chdir => "path" : changes working directory to the specified path.
+  #
   # ---
   # *Arguments*:
   # * (required) _cmd_: Array containing String objects
   # * (optional) _query_: String
+  # * (optional) _options_: Hash
   # *Returns*:: String or nil
-  def query_command(cmd, query = nil)
+  def query_command(cmd, query = nil, options = {})
     case RUBY_PLATFORM
     when /mswin32|bccwin32/
-      query_command_popen(cmd, query)
+      query_command_popen(cmd, query, options)
     else
-      query_command_fork(cmd, query)
+      query_command_fork(cmd, query, options)
     end
   end
 
@@ -232,15 +270,17 @@ module Command
   # *Arguments*:
   # * (required) _cmd_: Array containing String objects
   # * (optional) _query_: String
+  # * (optional) _options_: Hash
   # *Returns*:: String or nil
-  def query_command_popen(cmd, query = nil)
-    str = make_command_line(cmd)
-    IO.popen(str, "w+") do |io|
+  def query_command_popen(cmd, query = nil, options = {})
+    ret = nil
+    call_command_popen(cmd, options) do |io|
       io.sync = true
       io.print query if query
       io.close_write
-      io.read
+      ret = io.read
     end
+    ret
   end
 
   # Executes the program with the query (String) given to the standard input,
@@ -250,33 +290,23 @@ module Command
   # Fork (by using IO.popen("-")) and exec is used to execute the program.
   #
   # From the view point of security, this method is recommended
-  # rather than query_popen.
+  # rather than query_command_popen.
   #
   # ---
   # *Arguments*:
   # * (required) _cmd_: Array containing String objects
   # * (optional) _query_: String
+  # * (optional) _options_: Hash
   # *Returns*:: String or nil
-  def query_command_fork(cmd, query = nil)
-    cmd = safe_command_line_array(cmd)
-    IO.popen("-", "r+") do |io|
-      if io then
-        # parent
-        io.sync = true
-        io.print query if query
-        io.close_write
-        io.read
-      else
-        # child
-        begin
-          Kernel.exec(*cmd)
-        rescue Errno::ENOENT, Errno::EACCES
-          Process.exit!(127)
-        rescue Exception
-        end
-        Process.exit!(1)
-      end
+  def query_command_fork(cmd, query = nil, options = {})
+    ret = nil
+    call_command_fork(cmd, options) do |io|
+      io.sync = true
+      io.print query if query
+      io.close_write
+      ret = io.read
     end
+    ret
   end
 
   # Executes the program via Open3.popen3 with the query (String) given
@@ -306,6 +336,153 @@ module Command
       [ output, errorlog ]
     end
   end
+
+  # Same as FileUtils.remove_entry_secure after Ruby 1.8.3.
+  # In Ruby 1.8.2 or previous version, it only shows warning message
+  # and does nothing.
+  #
+  # It is strongly recommended using Ruby 1.8.5 or later.
+  # ---
+  # *Arguments*:
+  # * (required) _path_: String
+  # * (optional) _force_: boolean
+  def remove_entry_secure(path, force = false)
+    begin
+      FileUtils.remove_entry_secure(path, force)
+    rescue NoMethodError
+      warn "The temporary file or directory is not removed because of the lack of FileUtils.remove_entry_secure. Use Ruby 1.8.3 or later (1.8.5 or later is strongly recommended): #{path}"
+      nil
+    end
+  end
+
+  # Backport of Dir.mktmpdir in Ruby 1.9.
+  #
+  # Same as Dir.mktmpdir(prefix_suffix) in Ruby 1.9.
+  #
+  # ---
+  # *Arguments*:
+  # * (optional) <em>prefix_suffix</em>: String (or Array, etc.)
+  # * (optional) <em>tmpdir</em>: String: temporary directory's path
+  # 
+  def mktmpdir(prefix_suffix = nil, tmpdir = nil, &block)
+    begin
+      Dir.mktmpdir(prefix_suffix, tmpdir, &block)
+    rescue NoMethodError
+      # backported from Ruby 1.9.2-preview1.
+      # ***** Below is excerpted from Ruby 1.9.2-preview1's lib/tmpdir.rb ****
+      # ***** Be careful about copyright. ****
+      case prefix_suffix
+      when nil
+        prefix = "d"
+        suffix = ""
+      when String
+        prefix = prefix_suffix
+        suffix = ""
+      when Array
+        prefix = prefix_suffix[0]
+        suffix = prefix_suffix[1]
+      else
+        raise ArgumentError, "unexpected prefix_suffix: #{prefix_suffix.inspect}"
+      end
+      tmpdir ||= Dir.tmpdir
+      t = Time.now.strftime("%Y%m%d")
+      n = nil
+      begin
+        path = "#{tmpdir}/#{prefix}#{t}-#{$$}-#{rand(0x100000000).to_s(36)}"
+        path << "-#{n}" if n
+        path << suffix
+        Dir.mkdir(path, 0700)
+      rescue Errno::EEXIST
+        n ||= 0
+        n += 1
+        retry
+      end
+
+      if block_given?
+        begin
+          yield path
+        ensure
+          remove_entry_secure path
+        end
+      else
+        path
+      end
+      # ***** Above is excerpted from Ruby 1.9.2-preview1's lib/tmpdir.rb ****
+    end
+  end
+
+  # Bio::Command::Tmpdir is a wrapper class to handle temporary directory
+  # like Tempfile class. A temporary directory is created when the object
+  # of the class is created, and automatically removed when the object
+  # is destroyed by GC.
+  #
+  # BioRuby library internal use only.
+  class Tmpdir
+
+    # Returns finalizer object for Tmpdir class.
+    # Internal use only. Users should not call this method directly.
+    # 
+    # Acknowledgement: The essense of the code is taken from tempfile.rb
+    # in Ruby 1.8.7.
+    #
+    # ---
+    # *Arguments*:
+    # * (required) _data_: Array containing internal data
+    # *Returns*:: Proc object
+    def self.callback(data)
+      pid = $$
+      lambda {
+        path, = *data
+        if pid == $$
+          $stderr.print "removing ", path, " ..." if $DEBUG
+          if path and !path.empty? and
+              File.directory?(path) and
+              !File.symlink?(path) then
+            Bio::Command.remove_entry_secure(path)
+            $stderr.print "done\n" if $DEBUG
+          else
+            $stderr.print "skipped\n" if $DEBUG
+          end
+        end
+      }
+    end
+
+    # Creates a new Tmpdir object.
+    # The arguments are the same as Bio::Command.mktmpdir.
+    #
+    # ---
+    # *Arguments*:
+    # * (optional) <em>prefix_suffix</em>: String (or Array)
+    # * (optional) <em>tmpdir</em>: String: temporary directory's path
+    # *Returns*:: Tmpdir object
+    def initialize(prefix_suffix = nil, tmpdir = nil)
+      @data = []
+      @clean_proc = self.class.callback(@data)
+      ObjectSpace.define_finalizer(self, @clean_proc)
+      @data.push(@path = Bio::Command.mktmpdir(prefix_suffix, tmpdir).freeze)
+    end
+
+    # Path to the temporay directory
+    #
+    # *Returns*:: String
+    def path
+      @path || raise(IOError, 'removed temporary directory')
+    end
+
+    # Removes the temporary directory.
+    #
+    # *Returns*:: nil
+    def close!
+      # raise error if path is nil
+      self.path
+      # finilizer object is called to remove the directory
+      @clean_proc.call
+      # unregister finalizer
+      ObjectSpace.undefine_finalizer(self)
+      # @data and @path is removed
+      @data = @path = nil
+    end
+  end #class Tmpdir
 
   # Same as OpenURI.open_uri(uri).read
   # and 
@@ -368,6 +545,36 @@ module Command
   end
 
   # Same as:
+  #  http = Net::HTTP.new(...); http.post_form(path, params)
+  # and 
+  # it uses proxy if an environment variable (same as OpenURI.open_uri)
+  # is set.
+  # In addition, +header+ can be set.
+  # (Note that Content-Type and Content-Length are automatically
+  # set by default.)
+  # +uri+ must be a URI object, +params+ must be a hash, and
+  # +header+ must be a hash.
+  #
+  # ---
+  # *Arguments*:
+  # * (required) _http_: Net::HTTP object or compatible object
+  # * (required) _path_: String
+  # * (optional) _params_: Hash containing parameters
+  # * (optional) _header_: Hash containing header strings
+  # *Returns*:: (same as Net::HTTP::post_form)
+  def http_post_form(http, path, params = nil, header = {})
+    data = make_cgi_params(params)
+
+    hash = {
+      'Content-Type'   => 'application/x-www-form-urlencoded',
+      'Content-Length' => data.length.to_s
+    }
+    hash.update(header)
+
+    http.post(path, data, hash)
+  end
+
+  # Same as:
   # Net::HTTP.post_form(uri, params)
   # and 
   # it uses proxy if an environment variable (same as OpenURI.open_uri)
@@ -382,7 +589,7 @@ module Command
   # *Arguments*:
   # * (required) _uri_: URI object or String
   # * (optional) _params_: Hash containing parameters
-  # * (optional) _hrader_: Hash containing header strings
+  # * (optional) _header_: Hash containing header strings
   # *Returns*:: (same as Net::HTTP::post_form)
   def post_form(uri, params = nil, header = {})
     unless uri.is_a?(URI)
@@ -430,7 +637,12 @@ module Command
         end.join('&')
       when String
         data = params.map do |str|
-          URI.escape(str.strip)
+          key, val = str.split(/\=/, 2)
+          if val then
+            make_cgi_params_key_value(key, val)
+          else
+            CGI.escape(str)
+          end
         end.join('&')
       end
     when String
@@ -452,10 +664,10 @@ module Command
     case value
     when Array
       value.each do |val|
-        result << [key, val].map {|x| URI.escape(x.to_s) }.join('=')
+        result << [key, val].map {|x| CGI.escape(x.to_s) }.join('=')
       end
     else
-      result << [key, value].map {|x| URI.escape(x.to_s) }.join('=')
+      result << [key, value].map {|x| CGI.escape(x.to_s) }.join('=')
     end
     return result
   end

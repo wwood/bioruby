@@ -4,18 +4,20 @@
 # Copyright::   Copyright (C) 2006 Mitsuteru C. Nakao <n@bioruby.org>
 # License::     The Ruby License
 #
-#  $Id: test_compat.rb,v 1.3 2007/04/05 23:35:44 trevor Exp $
+#  $Id:$
 #
 
+# loading helper routine for testing bioruby
 require 'pathname'
-libpath = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 4, 'lib')).cleanpath.to_s
-$:.unshift(libpath) unless $:.include?(libpath)
+load Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 3,
+                            'bioruby_test_helper.rb')).cleanpath.to_s
 
+# libraries needed for the tests
 require 'test/unit'
 require 'bio/sequence'
 require 'bio/sequence/compat'
 
-module Bio
+module Bio; module TestSequenceCompat
   
   class TSequence < String
     include Bio::Sequence::Common
@@ -66,4 +68,4 @@ module Bio
     end
   end
 
-end
+end; end #module Bio; module TestSequenceCompat

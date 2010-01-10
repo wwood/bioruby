@@ -5,13 +5,19 @@
 #
 # License::     The Ruby License
 #
-# $Id: test_nexus.rb,v 1.2 2007/04/05 23:35:43 trevor Exp $
+# $Id:$
 #
 # == Description
 #
 # This file contains unit tests for Bio::Nexus.
 #
 
+# loading helper routine for testing bioruby
+require 'pathname'
+load Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 3,
+                            'bioruby_test_helper.rb')).cleanpath.to_s
+
+# libraries needed for the tests
 require 'test/unit'
 require 'bio/db/nexus'
 

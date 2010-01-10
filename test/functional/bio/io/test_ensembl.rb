@@ -8,11 +8,12 @@
 #  $Id:$
 #
 
+# loading helper routine for testing bioruby
 require 'pathname'
-libpath = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 4, 'lib')).cleanpath.to_s
-$:.unshift(libpath) unless $:.include?(libpath)
+load Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 3,
+                            'bioruby_test_helper.rb')).cleanpath.to_s
 
-
+# libraries needed for the tests
 require 'test/unit'
 require 'bio/io/ensembl'
 
@@ -39,6 +40,13 @@ class FuncTestEnsemblHuman < Test::Unit::TestCase
   
   def test_server
     assert_equal("http://www.ensembl.org", @serv.server)
+  end
+end
+
+class FuncTestEnsemblHumanExportView < Test::Unit::TestCase
+  def setup
+    @serv = Bio::Ensembl.new('Homo_sapiens',
+                             'http://jul2008.archive.ensembl.org')
   end
 
   def test_fna_exportview

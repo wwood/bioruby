@@ -1,48 +1,57 @@
 # This document is generated with a version of rd2html (part of Hiki)
 #
-# A possible test run could be from rdtool (on Debian package rdtool)
-#
-#   ruby -I lib ./bin/rd2 ~/cvs/opensource/bioruby/doc/Tutorial.rd
+#   rd2 Tutorial.rd
 #
 # or with style sheet:
 #
-#   ruby -I lib ./bin/rd2 -r rd/rd2html-lib.rb --with-c
-ss=bioruby.css ~/cvs/opensource/bioruby/doc/Tutorial.rd > ~/bioruby.html
+#   rd2 -r rd/rd2html-lib.rb --with-css=bioruby.css Tutorial.rd > Tutorial.rd.html
 #
 # in Debian:
 #
-#   rd2 -r rd/rd2html-lib  --with-css="/home/wrk/izip/cvs/opensource/bioruby/lib/bio/shell/rails/vendor/plugins/bioruby/generators/bioruby/templates/bioruby.css" Tutorial.rd > index.html
+#   rd2 -r rd/rd2html-lib  --with-css="../lib/bio/shell/rails/vendor/plugins/bioruby/generators/bioruby/templates/bioruby.css" Tutorial.rd > Tutorial.rd.html
 #
 # A common problem is tabs in the text file! TABs are not allowed.
 #
 # To add tests run Toshiaki's bioruby shell and paste in the query plus
 # results.
 #
-# To run the embedded Ruby doctests you can get the doctest.rb from Pjotr.
+# To run the embedded Ruby doctests you can use the rubydoctest tool, though
+# it needs a little conversion. Like:
+#
+#   cat Tutorial.rd | sed -e "s,bioruby>,>>," | sed "s,==>,=>," > Tutorial.rd.tmp
+#   rubydoctest Tutorial.rd.tmp
+#
+# alternatively, the Ruby way is
+#
+#   ruby -p -e '$_.sub!(/bioruby\>/, ">>"); $_.sub!(/\=\=\>/, "=>")' Tutorial.rd > Tutorial.rd.tmp
+#   rubydoctest Tutorial.rd.tmp
+#
+# Rubydoctest is useful to verify an example in this document (still) works
+#
+#
+
+bioruby> $: << '../lib'
 
 =begin
 #doctest Testing bioruby
 
 = BioRuby Tutorial
 
-Editor: PjotrPrins <p .at. bioruby.org>
-
 * Copyright (C) 2001-2003 KATAYAMA Toshiaki <k .at. bioruby.org>
-* Copyright (C) 2005-2008 Pjotr Prins, Naohisa Goto and others
+* Copyright (C) 2005-2010 Pjotr Prins, Naohisa Goto and others
 
-The latest version resides in the CVS repository ./doc/((<Tutorial.rd|URL:http://cvs.open-bio.org/cgi-bin/viewcvs/viewcvs.cgi/*checkout*/bioruby/doc/Tutorial.rd?rev=HEAD&cvsroot=bioruby&content-type=text/plain>)). This one was updated:
+This document was last modified: 2009/12/27
+Current editor: Pjotr Prins <p .at. bioruby.org>
 
-  $Id: Tutorial.rd,v 1.22 2008/05/19 12:22:05 pjotr Exp $ 
-
-in preparation for the ((<BioHackathlon 2008|URL:http://hackathon.dbcls.jp/>))
+The latest version resides in the GIT source code repository:  ./doc/((<Tutorial.rd|URL:http://github.com/pjotrp/bioruby/raw/documentation/doc/Tutorial.rd>)).
 
 == Introduction
 
 This is a tutorial for using Bioruby. A basic knowledge of Ruby is required.
 If you want to know more about the programming langauge Ruby we recommend the
-excellent book ((<Programming Ruby|URL:http://www.pragprog.com/titles/ruby>))
-by Dave Thomas and Andy Hunt - some of it is online
-((<here|URL:http://www.rubycentral.com/pickaxe/>)).
+latest Ruby book ((<Programming Ruby|URL:http://www.pragprog.com/titles/ruby>))
+by Dave Thomas and Andy Hunt - the first edition is online
+((<here|URL:http://www.ruby-doc.org/docs/ProgrammingRuby/>)).
 
 For BioRuby you need to install Ruby and the BioRuby package on your computer
 
@@ -53,14 +62,19 @@ version it has with the
 
 command. Showing something like:
 
-  ruby 1.8.5 (2006-08-25) [powerpc-linux]
+  ruby 1.8.7 (2008-08-11 patchlevel 72) [i486-linux]
 
 If you see no such thing you'll have to install Ruby using your installation
 manager. For more information see the
 ((<Ruby|URL:http://www.ruby-lang.org/en/>)) website.
 
-Once Ruby is works download and install Bioruby using the links on the
-((<Bioruby|URL:http://bioruby.org/>)) website.
+With Ruby download and install Bioruby using the links on the
+((<Bioruby|URL:http://bioruby.org/>)) website. The recommended installation is via 
+Ruby gems:
+
+  gem install bio
+
+See also the Bioruby ((<wiki|URL:http://bioruby.open-bio.org/wiki/Installation>)).
 
 A lot of BioRuby's documentation exists in the source code and unit tests. To
 really dive in you will need the latest source code tree. The embedded rdoc
@@ -81,6 +95,7 @@ and you should see a prompt
 
 Now test the following:
 
+  bioruby> require 'bio'
   bioruby> seq = Bio::Sequence::NA.new("atgcatgcaaaa")
   ==> "atgcatgcaaaa"
 
@@ -182,37 +197,34 @@ way of writing concise and clear code using 'closures'. Each sliding
 window creates a subsequence which is supplied to the enclosed block
 through a variable named +s+.
 
-Show average percentage of GC content for 20 bases (stepping the default one base at a time)
+* Show average percentage of GC content for 20 bases (stepping the default one base at a time)
 
-  bioruby> seq = Bio::Sequence::NA.new("atgcatgcaattaagctaatcccaattagatcatcccgatcatcaaaaaaaaaa")
-  ==> "atgcatgcaattaagctaatcccaattagatcatcccgatcatcaaaaaaaaaa"
+   bioruby> seq = Bio::Sequence::NA.new("atgcatgcaattaagctaatcccaattagatcatcccgatcatcaaaaaaaaaa")
+   ==> "atgcatgcaattaagctaatcccaattagatcatcccgatcatcaaaaaaaaaa"
 
-  bioruby> a=[]; seq.window_search(20) { |s| a.push s.gc_percent } 
-  bioruby> a
-  ==> [30, 35, 40, 40, 35, 35, 35, 30, 25, 30, 30, 30, 35, 35, 35, 35, 35, 40, 45, 45, 45, 45, 40, 35, 40, 40, 40, 40, 40, 35, 35, 35, 30, 30, 30]
+   bioruby> a=[]; seq.window_search(20) { |s| a.push s.gc_percent } 
+   bioruby> a
+   ==> [30, 35, 40, 40, 35, 35, 35, 30, 25, 30, 30, 30, 35, 35, 35, 35, 35, 40, 45, 45, 45, 45, 40, 35, 40, 40, 40, 40, 40, 35, 35, 35, 30, 30, 30]
 
  
 Since the class of each subsequence is the same as original sequence
 (Bio::Sequence::NA or Bio::Sequence::AA or Bio::Sequence), you can
 use all methods on the subsequence. For example,
 
-Shows translation results for 15 bases shifting a codon at a time
+* Shows translation results for 15 bases shifting a codon at a time
 
-  bioruby> a = []
-  bioruby> seq.window_search(15, 3) do |s|
-  bioruby>   a.push s.translate
-  bioruby> end
-  bioruby> a
-  ==> ["MHAIK", "HAIKL", "AIKLI", "IKLIP", "KLIPI", "LIPIR", "IPIRS", "PIRSS", "IRSSR", "RSSRS", "SSRSS", "SRSSK", "RSSKK", "SSKKK"]
-
+   bioruby> a = []
+   bioruby> seq.window_search(15, 3) { | s | a.push s.translate }
+   bioruby> a
+   ==> ["MHAIK", "HAIKL", "AIKLI", "IKLIP", "KLIPI", "LIPIR", "IPIRS", "PIRSS", "IRSSR", "RSSRS", "SSRSS", "SRSSK", "RSSKK", "SSKKK"]
 
 Finally, the window_search method returns the last leftover
 subsequence. This allows for example
 
-Divide a genome sequence into sections of 10000bp and
-output FASTA formatted sequences (line width 60 chars). The 1000bp at the
-start and end of each subsequence overlapped. At the 3' end of the sequence
-the leftover is also added:
+* Divide a genome sequence into sections of 10000bp and
+  output FASTA formatted sequences (line width 60 chars). The 1000bp at the
+  start and end of each subsequence overlapped. At the 3' end of the sequence
+  the leftover is also added:
 
     i = 1
     textwidth=60
@@ -229,24 +241,20 @@ size to equal values.
 
 Other examples
 
-Count the codon usage
+* Count the codon usage
 
-  bioruby> codon_usage = Hash.new(0)
-  bioruby> seq.window_search(3, 3) do |s|
-  bioruby>   codon_usage[s] += 1
-  bioruby> end
-  bioruby> codon_usage
-  ==> {"cat"=>1, "aaa"=>3, "cca"=>1, "att"=>2, "aga"=>1, "atc"=>1, "cta"=>1, "gca"=>1, "cga"=>1, "tca"=>3, "aag"=>1, "tcc"=>1, "atg"=>1}
+   bioruby> codon_usage = Hash.new(0)
+   bioruby> seq.window_search(3, 3) { |s| codon_usage[s] += 1 }
+   bioruby> codon_usage
+   ==> {"cat"=>1, "aaa"=>3, "cca"=>1, "att"=>2, "aga"=>1, "atc"=>1, "cta"=>1, "gca"=>1, "cga"=>1, "tca"=>3, "aag"=>1, "tcc"=>1, "atg"=>1}
 
 
-Calculate molecular weight for each 10-aa peptide (or 10-nt nucleic acid)
+* Calculate molecular weight for each 10-aa peptide (or 10-nt nucleic acid)
 
-  bioruby> a = []
-  bioruby> seq.window_search(10, 10) do |s|
-  bioruby>   a.push s.molecular_weight
-  bioruby> end
-  bioruby> a
-  ==> [3096.2062, 3086.1962, 3056.1762, 3023.1262, 3073.2262]
+   bioruby> a = []
+   bioruby> seq.window_search(10, 10) { |s| a.push s.molecular_weight }
+   bioruby> a
+   ==> [3096.2062, 3086.1962, 3056.1762, 3023.1262, 3073.2262]
 
 In most cases, sequences are read from files or retrieved from databases.
 For example:
@@ -398,12 +406,12 @@ very complicated:
       end
     end
 
-Note: In this example Feature#assoc method makes a Hash from a
-feature object. It is useful because you can get data from the hash
-by using qualifiers as keys.
-(But there is a risk some information is lost when two or more
-qualifiers are the same. Therefore an Array is returned by
-Feature#feature)
+* Note: In this example Feature#assoc method makes a Hash from a
+  feature object. It is useful because you can get data from the hash
+  by using qualifiers as keys.
+  (But there is a risk some information is lost when two or more
+  qualifiers are the same. Therefore an Array is returned by
+  Feature#feature)
 
 Bio::Sequence#splicing splices subsequence from nucleic acid sequence
 according to location information used in GenBank, EMBL and DDBJ.
@@ -417,11 +425,11 @@ feature style location text but also Bio::Locations object. For more
 information about location format and Bio::Locations class, see
 bio/location.rb.
 
-Splice according to location string used in a GenBank entry
+* Splice according to location string used in a GenBank entry
 
     naseq.splicing('join(2035..2050,complement(1775..1818),13..345')
 
-Generate Bio::Locations object and pass the splicing method
+* Generate Bio::Locations object and pass the splicing method
 
     locs = Bio::Locations.new('join((8298.8300)..10206,1..855)')
     naseq.splicing(locs)
@@ -429,7 +437,7 @@ Generate Bio::Locations object and pass the splicing method
 You can also use the splicing method for amino acid sequences
 (Bio::Sequence::AA objects).
 
-Splicing peptide from a protein (e.g. signal peptide)
+* Splicing peptide from a protein (e.g. signal peptide)
 
     aaseq.splicing('21..119')
 
@@ -469,7 +477,7 @@ to a FASTA file can be found in sample/any2fasta.rb. With this technique it is
 possible to write a Unix type grep/sort pipe for sequence information. One
 example using scripts in the BIORUBY sample folder:
 
-  fastagrep.rb '/At|Dm/' database.seq | fastasort.rb
+ fastagrep.rb '/At|Dm/' database.seq | fastasort.rb
 
 greps the database for Arabidopsis and Drosophila entries and sorts the output
 to FASTA.
@@ -505,23 +513,23 @@ Array and BioPerl's Bio::SimpleAlign.  A very simple example is:
   bioruby> a.consensus 
   ==> "a?gc?"
   # shows IUPAC consensus
-  a.consensus_iupac 
-  ==> "ahgcr"
+  p a.consensus_iupac       # ==> "ahgcr"
+
   # iterates over each seq
   a.each { |x| p x }
-  # ==>
-  #    "atgca"
-  #    "aagca"
-  #    "acgca"
-  #    "acgcg"
+    # ==>
+    #    "atgca"
+    #    "aagca"
+    #    "acgca"
+    #    "acgcg"
   # iterates over each site
   a.each_site { |x| p x }
-  # ==>
-  #    ["a", "a", "a", "a"]
-  #    ["t", "a", "c", "c"]
-  #    ["g", "g", "g", "g"]
-  #    ["c", "c", "c", "c"]
-  #    ["a", "a", "a", "g"]
+    # ==>
+    #    ["a", "a", "a", "a"]
+    #    ["t", "a", "c", "c"]
+    #    ["g", "g", "g", "g"]
+    #    ["c", "c", "c", "c"]
+    #    ["a", "a", "a", "g"]
 
   # doing alignment by using CLUSTAL W.
   # clustalw command must be installed.
@@ -671,7 +679,7 @@ method of the factory object after the "query" method.
 === using FASTA from a remote internet site
 
 * Note: Currently, only GenomeNet (fasta.genome.jp) is
-supported. check the class documentation for updates.
+  supported. check the class documentation for updates.
 
 For accessing a remote site the Bio::Fasta.remote method is used
 instead of Bio::Fasta.local.  When using a remote method, the
@@ -774,7 +782,7 @@ Check the documentation for Bio::Blast::Report to see what can be
 retrieved. For now suffice to state that Bio::Blast::Report has a
 hierarchical structure mirroring the general BLAST output stream:
 
-  * In a Bio::Blast::Report object, @iteratinos is an array of
+  * In a Bio::Blast::Report object, @iterations is an array of
     Bio::Blast::Report::Iteration objects.
     * In a Bio::Blast::Report::Iteration object, @hits is an array of
       Bio::Blast::Report::Hits objects.
@@ -790,13 +798,26 @@ you can directly create Bio::Blast::Report objects without the
 Bio::Blast factory object. For this purpose use Bio::Blast.reports,
 which supports the "-m 0" default and "-m 7" XML type output format.
 
-    #!/usr/bin/env ruby
+* For example: 
+
+    blast_version = nil; result = []
+    Bio::Blast.reports(File.new("../test/data/blast/blastp-multi.m7")) do |report|
+      blast_version = report.version
+      report.iterations.each do |itr|
+        itr.hits.each do |hit|
+          result.push hit.target_id
+        end
+      end
+    end
+    blast_version
+    # ==> "blastp 2.2.18 [Mar-02-2008]"
+    result
+    # ==> ["BAB38768", "BAB38768", "BAB38769", "BAB37741"]
+
+* another example:
 
     require 'bio'
-
-    # Iterates over each XML result.
-    # The variable "report" is a Bio::Blast::Report object.
-    Bio::Blast.reports(ARGF) do |report|
+    Bio::Blast.reports(ARGF) do |report| 
       puts "Hits for " + report.query_def + " against " + report.db
       report.each do |hit|
         print hit.target_id, "\t", hit.evalue, "\n" if hit.evalue < 0.001
@@ -804,14 +825,16 @@ which supports the "-m 0" default and "-m 7" XML type output format.
     end
 
 Save the script as hits_under_0.001.rb and to process BLAST output
-files *.xml, you can
+files *.xml, you can run it with:
 
    % ruby hits_under_0.001.rb *.xml
 
-Sometimes BLAST XML output may be wrong and can not be parsed. We
-recommended to install BLAST 2.2.5 or later, and try combinations of
-the -D and -m options when you encounter problems.
+Sometimes BLAST XML output may be wrong and can not be parsed. Check whether 
+blast is version 2.2.5 or later. See also blast --help. 
 
+Bio::Blast loads the full XML file into memory. If this causes a problem
+you can split the BLAST XML file into smaller chunks using XML-Twig. An
+example can be found in ((<Biotools|URL:http://github.com/pjotrp/biotools/>)).
 
 === Add remote BLAST search sites
 
@@ -835,12 +858,10 @@ When you write above routines, please send to the BioRuby project and
 they may be included.
 
 == Generate a reference list using PubMed (Bio::PubMed)
+=end
+(EDITORs NOTE: examples in this section do not work and should be rewritten.)
 
 Below script is an example which seaches PubMed and creates a reference list.
-
-    #!/usr/bin/env ruby
-
-    require 'bio'
 
     ARGV.each do |id|
       entry = Bio::PubMed.query(id)     # searches PubMed and get entry
@@ -887,6 +908,7 @@ bold and italic font output.
 
 (EDITORs NOTE: do we have some simple object that can be queried for
 author, title etc.?)
+=begin
 
 Nowadays using NCBI E-Utils is recommended. Use Bio::PubMed.esearch
 and Bio::PubMed.efetch instead of above methods.
@@ -895,6 +917,11 @@ and Bio::PubMed.efetch instead of above methods.
     #!/usr/bin/env ruby
 
     require 'bio'
+
+    # NCBI announces that queries without email address will return error
+    # after June 2010. When you modify the script, please enter your email
+    # address instead of the staff's.
+    Bio::NCBI.default_email = 'staff@bioruby.org'
 
     keywords = ARGV.join(' ')
 
@@ -1009,10 +1036,6 @@ BioRuby and other projects' members (2002).
 
 Here we give a quick overview. Check out
 ((<URL:http://obda.open-bio.org/>)) for more extensive details.
-
-The specification is stored on CVS repository at cvs.open-bio.org,
-also available via http from:
-((<URL:http://cvs.open-bio.org/cgi-bin/viewcvs/viewcvs.cgi/obda-specs/?cvsroot=obf-common>))
 
 == BioRegistry
 
@@ -1199,6 +1222,110 @@ Bio::Fetch.query method.)
 
 to be written...
 
+= PhyloXML
+
+PhyloXML is an XML language for saving, analyzing and exchanging data of 
+annotated phylogenetic trees. PhyloXML parser in BioRuby is implemented in 
+Bio::PhyloXML::Parser and writer in Bio::PhyloXML::Writer. 
+More information at www.phyloxml.org
+
+== Requirements
+
+In addition to BioRuby library you need a libxml ruby bindings. To install:
+
+  % gem install -r libxml-ruby
+
+For more information see ((<URL:http://libxml.rubyforge.org/install.xml>))
+
+== Parsing a file
+
+    require 'bio'
+    
+    # Create new phyloxml parser
+    phyloxml = Bio::PhyloXML::Parser.open('example.xml')
+    
+    # Print the names of all trees in the file
+    phyloxml.each do |tree|
+      puts tree.name
+    end
+
+If there are several trees in the file, you can access the one you wish by an index
+
+    tree = phyloxml[3]
+
+You can use all Bio::Tree methods on the tree, since PhyloXML::Tree inherits from Bio::Tree. For example,
+
+   tree.leaves.each do |node|
+     puts node.name
+   end
+
+PhyloXML files can hold additional information besides phylogenies at the end of the file. This info can be accessed through the 'other' array of the parser object.
+
+    phyloxml = Bio::PhyloXML::Parser.open('example.xml')
+    while tree = phyloxml.next_tree
+      # do stuff with trees
+    end 
+      
+    puts phyloxml.other
+
+== Writing a file
+
+    # Create new phyloxml writer
+    writer = Bio::PhyloXML::Writer.new('tree.xml')
+   
+    # Write tree to the file tree.xml
+    writer.write(tree1) 
+    
+    # Add another tree to the file
+    writer.write(tree2)
+
+== Retrieving data
+
+Here is an example of how to retrieve the scientific name of the clades.
+
+    require 'bio'
+    
+    phyloxml = Bio::PhyloXML::Parser.open('ncbi_taxonomy_mollusca.xml')
+    phyloxml.each do |tree|
+      tree.each_node do |node|
+        print "Scientific name: ", node.taxonomies[0].scientific_name, "\n"
+      end
+    end
+
+== Retrieving 'other' data
+
+    require 'bio'
+    
+    phyloxml = Bio::PhyloXML::Parser.open('phyloxml_examples.xml')
+    while tree = phyloxml.next_tree
+     #do something with the trees
+    end
+
+    p phyloxml.other
+    puts "\n"
+    #=> output is an object representation
+    
+    #Print in a readable way
+    puts phyloxml.other[0].to_xml, "\n"
+    #=>:
+    #
+    #<align:alignment xmlns:align="http://example.org/align">
+    #  <seq name="A">acgtcgcggcccgtggaagtcctctcct</seq>
+    #  <seq name="B">aggtcgcggcctgtggaagtcctctcct</seq>
+    #  <seq name="C">taaatcgc--cccgtgg-agtccc-cct</seq>
+    #</align:alignment>
+    
+    #Once we know whats there, lets output just sequences
+    phyloxml.other[0].children.each do |node|
+     puts node.value
+    end
+    #=>
+    #
+    #acgtcgcggcccgtggaagtcctctcct
+    #aggtcgcggcctgtggaagtcctctcct
+    #taaatcgc--cccgtgg-agtccc-cct
+
+
 == The BioRuby example programs
 
 Some sample programs are stored in ./samples/ directory. Run for example:
@@ -1254,6 +1381,34 @@ Please refer to KEGG_API.rd.ja (English version: ((<URL:http://www.genome.jp/keg
 
   * ((<URL:http://www.genome.jp/kegg/soap/>))
 
+== Ruby Ensembl API
+
+Ruby Ensembl API is a ruby API to the Ensembl database. It is NOT currently
+included in the BioRuby archives. To install it, see
+((<URL:http://wiki.github.com/jandot/ruby-ensembl-api>))
+for more information.
+
+=== Gene Ontology (GO) through the Ruby Ensembl API
+
+Gene Ontologies can be fetched through the Ruby Ensembl API package:
+
+   require 'ensembl'
+   Ensembl::Core::DBConnection.connect('drosophila_melanogaster')
+   infile = IO.readlines(ARGV.shift) # reading your comma-separated accession mapping file (one line per mapping)
+   infile.each do |line|
+     accs = line.split(",")          # Split the comma-sep.entries into an array
+     drosphila_acc = accs.shift      # the first entry is the Drosophila acc
+     mosq_acc = accs.shift           # the second entry is you Mosq. acc
+     gene = Ensembl::Core::Gene.find_by_stable_id(drosophila_acc)
+     print "#{mosq_acc}"
+     gene.go_terms.each do |go|
+        print ",#{go}"
+     end
+   end
+
+Prints each mosq. accession/uniq identifier and the GO terms from the Drosphila
+homologues.
+
 == Comparing BioProjects
 
 For a quick functional comparison of BioRuby, BioPerl, BioPython and Bioconductor (R) see ((<URL:http://sciruby.codeforpeople.com/sr.cgi/BioProjects>))
@@ -1268,7 +1423,9 @@ At the moment there is no easy way of accessing BioPerl from Ruby. The best way,
 
 == Installing required external library
 
-At this point for using BioRuby no additional libraries are needed.
+At this point for using BioRuby no additional libraries are needed, except if
+you are using Bio::PhyloXML module. Then you have to install libxml-ruby.
+
 This may change, so keep an eye on the Bioruby website. Also when
 a package is missing BioRuby should show an informative message.
 
@@ -1277,6 +1434,18 @@ painful, as the gem standard for packages evolved late and some still
 force you to copy things by hand. Therefore read the README's
 carefully that come with each package.
 
+=== Installing libxml-ruby
+
+The simplest way is to use gem packaging system.
+
+  gem install -r libxml-ruby
+
+If you get `require': no such file to load - mkmf (LoadError) error then do
+
+  sudo apt-get install ruby-dev
+
+If you have other problems with installation, then see ((<URL:http://libxml.rubyforge.org/install.xml>))  
+
 == Trouble shooting
 
 * Error: in `require': no such file to load -- bio (LoadError)
@@ -1284,13 +1453,13 @@ carefully that come with each package.
 Ruby fails to find the BioRuby libraries - add it to the RUBYLIB path, or pass
 it to the interpeter. For example:
 
-  ruby -I~/cvs/bioruby/lib yourprogram.rb
+  ruby -I$BIORUBYPATH/lib yourprogram.rb
 
 == Modifying this page
 
-IMPORTANT NOTICE: This page is maintained in the BioRuby CVS
+IMPORTANT NOTICE: This page is maintained in the BioRuby source code 
 repository. Please edit the file there otherwise changes may get
-lost. See ((<BioRuby Developer Information>)) for CVS and mailing list
+lost. See ((<BioRuby Developer Information>)) for repository and mailing list
 access.
 
 =end

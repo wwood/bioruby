@@ -5,13 +5,15 @@
 #               Mitsuteru C. Nakao <n@bioruby.org>
 # License::     The Ruby License
 #
-# $Id: test_na.rb,v 1.6 2007/12/03 06:19:12 nakao Exp $
+# $Id:$
 #
 
+# loading helper routine for testing bioruby
 require 'pathname'
-libpath = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 4, 'lib')).cleanpath.to_s
-$:.unshift(libpath) unless $:.include?(libpath)
+load Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 3,
+                            'bioruby_test_helper.rb')).cleanpath.to_s
 
+# libraries needed for the tests
 require 'test/unit'
 require 'bio/sequence'
 require 'bio/sequence/na'  
@@ -175,7 +177,7 @@ module Bio
 
   end
 
-  class TestSequenceCommon < Test::Unit::TestCase
+  class TestSequenceNACommon < Test::Unit::TestCase
 
     def setup
       @obj  = Bio::Sequence::NA.new('atgcatgcatgcatgcaaaa')

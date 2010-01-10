@@ -5,7 +5,7 @@
 #              Mitsuteru C. Nakao <n@bioruby.org>
 # License::    The Ruby License
 #
-#  $Id: report.rb,v 1.8 2007/04/05 23:35:40 trevor Exp $
+#  $Id:$
 #
 # == Description
 #
@@ -13,6 +13,8 @@
 # == Example
 # == References
 #
+
+require 'enumerator'
 
 module Bio
 
@@ -81,6 +83,13 @@ module Bio
 
       #
       def initialize(entry = nil)
+        begin
+          str = entry.to_str
+        rescue NoMethodError
+        end
+        if str then
+          entry = str.enum_for(:each_line)
+        end
         parse_header(entry)
         @tmhs = parse_tmhs(entry)
       end
@@ -184,39 +193,3 @@ module Bio
 
 end # module Bio
 
-
-if __FILE__ == $0
-
-  begin
-    require 'pp'
-    alias p pp
-  rescue LoadError
-  end
-
-  Bio::TMHMM.reports(ARGF.read) do |ent|
-    puts '==>'
-    puts ent.to_s
-    pp ent
-
-    p [:entry_id, ent.entry_id]
-    p [:query_len, ent.query_len]
-    p [:predicted_tmhs, ent.predicted_tmhs]
-    p [:tmhs_size, ent.tmhs.size]
-    p [:exp_aas_in_tmhs, ent.exp_aas_in_tmhs]
-    p [:exp_first_60aa, ent.exp_first_60aa]
-    p [:total_prob_of_N_in, ent.total_prob_of_N_in]
-
-    ent.tmhs.each do |t|
-      p t
-      p [:entry_id, t.entry_id]
-      p [:version, t.version]
-      p [:status, t.status]
-      p [:range, t.range]
-      p [:pos, t.pos]
-    end
-
-    p [:helix, ent.helix]
-    p ent.tmhs.map {|t| t if t.status == 'TMhelix' }.compact
-  end
-
-end

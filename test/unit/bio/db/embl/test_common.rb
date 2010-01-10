@@ -4,13 +4,15 @@
 # Copyright::  Copyright (C) 2005 Mitsuteru Nakao <n@bioruby.org>
 # License::    The Ruby License
 #
-#  $Id: test_common.rb,v 1.4 2007/04/05 23:35:43 trevor Exp $
+#  $Id:$
 #
 
+# loading helper routine for testing bioruby
 require 'pathname'
-libpath = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 5, 'lib')).cleanpath.to_s
-$:.unshift(libpath) unless $:.include?(libpath)
+load Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 4,
+                            'bioruby_test_helper.rb')).cleanpath.to_s
 
+# libraries needed for the tests
 require 'test/unit'
 require 'bio/db/embl/common'
 
@@ -30,59 +32,59 @@ module Bio
     end
 
     def test_ac
-      assert(@obj.instance_methods.find {|x| x ==  'ac' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'ac' })
     end
 
     def test_accessions
-      assert(@obj.instance_methods.find {|x| x ==  'accessions' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'accessions' })
     end
     
     def test_accession
-      assert(@obj.instance_methods.find {|x| x ==  'accession' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'accession' })
     end
 
     def test_de
-      assert(@obj.instance_methods.find {|x| x ==  'de' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'de' })
     end
     
     def test_description
-      assert(@obj.instance_methods.find {|x| x ==  'description' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'description' })
     end
 
     def test_definition
-      assert(@obj.instance_methods.find {|x| x ==  'definition' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'definition' })
     end
 
     def test_os
-      assert(@obj.instance_methods.find {|x| x ==  'os' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'os' })
     end
 
     def test_og
-      assert(@obj.instance_methods.find {|x| x ==  'og' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'og' })
     end
     
     def test_oc
-      assert(@obj.instance_methods.find {|x| x ==  'oc' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'oc' })
     end
     
     def test_kw
-      assert(@obj.instance_methods.find {|x| x ==  'kw' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'kw' })
     end
 
     def test_keywords
-      assert(@obj.instance_methods.find {|x| x ==  'keywords' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'keywords' })
     end
 
     def test_ref
-      assert(@obj.instance_methods.find {|x| x ==  'ref' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'ref' })
     end
 
     def test_references
-      assert(@obj.instance_methods.find {|x| x ==  'references' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'references' })
     end
 
     def test_dr
-      assert(@obj.instance_methods.find {|x| x ==  'dr' })
+      assert(@obj.instance_methods.find {|x| x.to_s ==  'dr' })
     end
   end
 

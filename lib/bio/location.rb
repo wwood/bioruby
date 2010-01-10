@@ -2,10 +2,11 @@
 # = bio/location.rb - Locations/Location class (GenBank location format)
 #
 # Copyright::	Copyright (C) 2001, 2005 Toshiaki Katayama <k@bioruby.org>
-# Copyright::   Copyright (C) 2006 Jan Aerts <jan.aerts@bbsrc.ac.uk>
+#                             2006       Jan Aerts <jan.aerts@bbsrc.ac.uk>
+#                             2008       Naohisa Goto <ng@bioruby.org>
 # License::	The Ruby License
 #
-# $Id: location.rb,v 0.28 2007/04/05 23:35:39 trevor Exp $
+# $Id:$
 #
 
 module Bio
@@ -69,7 +70,8 @@ class Location
     when /^[<>]?(\d+)\^[<>]?(\d+)$/			# (C, I) n^m
       s = $1.to_i
       e = $2.to_i
-      if e - s != 1
+      carat = true
+      if e - s != 1 or e != 1 # assert n^n+1 or n^1
 #       raise "Error: invalid range : #{location}"
         $stderr.puts "[Warning] invalid range : #{location}" if $DEBUG
       end
@@ -90,11 +92,38 @@ class Location
     @lt         = lt            # true if the position contains '<'
     @gt         = gt            # true if the position contains '>'
     @xref_id    = xref_id       # link to the external entry as GenBank ID
+    @carat      = carat         # true if the location indicates the site
+                                # between two adjoining nucleotides
   end
 
-  attr_accessor :from, :to, :strand, :sequence, :lt, :gt, :xref_id
+  # (Integer) start position of the location
+  attr_accessor :from
+  # (Integer) end position of the location
+  attr_accessor :to
 
-  # Complements the sequence (i.e. alternates the strand).
+  # (Integer) strand direction of the location
+  # (forward => 1 or complement => -1)
+  attr_accessor :strand
+
+  # (String) literal sequence of the location
+  attr_accessor :sequence
+
+  # (true, false or nil) true if the position contains '<'
+  attr_accessor :lt
+
+  # (true, false or nil) true if the position contains '>'
+  attr_accessor :gt
+
+  # (String) link to the external entry as GenBank ID
+  attr_accessor :xref_id
+
+  # (true, false or nil) true if the location indicates the site
+  # between two adjoining nucleotides
+  attr_accessor :carat
+
+  # Complements the sequence location (i.e. alternates the strand).
+  # Note that it is destructive method (i.e. modifies itself),
+  # but it does not modify the "sequence" attribute.
   # ---
   # *Returns*:: the Bio::Location object
   def complement
@@ -293,6 +322,7 @@ class Locations
   # * (required) _str_: GenBank style position string
   # *Returns*:: Bio::Locations object
   def initialize(position)
+    @operator = nil
     if position.is_a? Array
       @locations = position
     else
@@ -301,8 +331,12 @@ class Locations
     end
   end
 
-  # An Array of Bio::Location objects
+  # (Array) An Array of Bio::Location objects
   attr_accessor :locations
+
+  # (Symbol or nil) Operator.
+  # nil (means :join), :order, or :group (obsolete).
+  attr_accessor :operator
 
   # Evaluate equality of Bio::Locations object.
   def equals?(other)
@@ -427,13 +461,71 @@ class Locations
   end
 
 
+  # String representation.
+  #
+  # Note: In some cases, it fails to detect whether
+  # "complement(join(...))" or "join(complement(..))", and whether
+  # "complement(order(...))" or "order(complement(..))".
+  # 
+  # ---
+  # *Returns*:: String
+  def to_s
+    return '' if @locations.empty?
+    complement_join = false
+    locs = @locations
+    if locs.size >= 2 and locs.inject(true) do |flag, loc|
+        # check if each location is complement
+        (flag && (loc.strand == -1) && !loc.xref_id)
+      end and locs.inject(locs[0].from) do |pos, loc|
+        if pos then
+          (pos >= loc.from) ? loc.from : false
+        else
+          false
+        end
+      end then
+      locs = locs.reverse
+      complement_join = true
+    end
+    locs = locs.collect do |loc|
+      lt = loc.lt ? '<' : ''
+      gt = loc.gt ? '>' : ''
+      str = if loc.from == loc.to then
+              "#{lt}#{gt}#{loc.from.to_i}"
+            elsif loc.carat then
+              "#{lt}#{loc.from.to_i}^#{gt}#{loc.to.to_i}"
+            else
+              "#{lt}#{loc.from.to_i}..#{gt}#{loc.to.to_i}"
+            end
+      if loc.xref_id and !loc.xref_id.empty? then
+        str = "#{loc.xref_id}:#{str}"
+      end
+      if loc.strand == -1 and !complement_join then
+        str = "complement(#{str})"
+      end
+      if loc.sequence then
+        str = "replace(#{str},\"#{loc.sequence}\")"
+      end
+      str
+    end
+    if locs.size >= 2 then
+      op = (self.operator || 'join').to_s
+      result = "#{op}(#{locs.join(',')})"
+    else
+      result = locs[0]
+    end
+    if complement_join then
+      result = "complement(#{result})"
+    end
+    result
+  end
+
   private
 
 
   # Preprocessing to clean up the position notation.
   def gbl_cleanup(position)
     # sometimes position contains white spaces...
-    position.gsub!(/\s+/, '')
+    position = position.gsub(/\s+/, '')
 
     # select one base					# (D) n.m
     #               ..         n          m           :
@@ -456,8 +548,8 @@ class Locations
       end
     end
 
-    # substitute order(), group() by join()		# (F) group(), order()
-    position.gsub!(/(order|group)/, 'join')
+    ## substitute order(), group() by join()		# (F) group(), order()
+    #position.gsub!(/(order|group)/, 'join')
 
     return position
   end
@@ -469,8 +561,11 @@ class Locations
 
     case position
 
-    when /^join\((.*)\)$/				# (F) join()
-      position = $1
+    when /^(join|order|group)\((.*)\)$/				# (F) join()
+      if $1 != "join" then
+        @operator = $1.intern
+      end
+      position = $2
 
       join_list = []		# sub positions to join
       bracket   = []		# position with bracket
@@ -696,77 +791,4 @@ end # Bio
 # * [ADR40FIB]	replace(510..520,	<= replace(510..520, "taatcctaccg")
 # * [RATDYIIAAB]	replace(1306..1443,"aagaacatccacggagtcagaactgggctcttcacgccggatttggcgttcgaggccattgtgaaaaagcaggcaatgcaccagcaagctcagttcctacccctgcgtggacctggttatccaggagctaatcagtacagttaggtggtcaagctgaaagagccctgtctgaaa")
 #
-
-if __FILE__ == $0
-  puts "Test new & span methods"
-  [
-    '450',
-    '500..600',
-    'join(500..550, 600..625)',
-    'complement(join(500..550, 600..625))',
-    'join(complement(500..550), 600..625)',
-    '754^755',
-    'complement(53^54)',
-    'replace(4792^4793,"a")',
-    'replace(1905^1906,"acaaagacaccgccctacgcc")',
-    '157..(800.806)',
-    '(67.68)..(699.703)',
-    '(45934.45974)..46135',
-    '<180..(731.761)',
-    '(88.89)..>1122',
-    'complement((1700.1708)..(1715.1721))',
-    'complement(<22..(255.275))',
-    'complement((64.74)..1525)',
-    'join((8298.8300)..10206,1..855)',
-    'replace((651.655)..(651.655),"")',
-    'one-of(898,900)..983',
-    'one-of(5971..6308,5971..6309)',
-    '8050..one-of(10731,10758,10905,11242)',
-    'one-of(623,627,632)..one-of(628,633,637)',
-    'one-of(845,953,963,1078,1104)..1354',
-    'join(2035..2050,complement(1775..1818),13..345,414..992,1232..1253,1024..1157)',
-    'join(complement(1..61),complement(AP000007.1:252907..253505))',
-    'complement(join(71606..71829,75327..75446,76039..76203))',
-    'order(3..26,complement(964..987))',
-    'order(L44135.1:(454.445)..>538,<1..181)',
-    '<200001..<318389',
-  ].each do |pos|
-    p pos
-#    p Bio::Locations.new(pos)
-#    p Bio::Locations.new(pos).span
-#    p Bio::Locations.new(pos).range
-    Bio::Locations.new(pos).each do |location|
-      puts "class=" + location.class.to_s
-      puts "start=" + location.from.to_s + "\tend=" + location.to.to_s + "\tstrand=" + location.strand.to_s
-    end
-
-  end
-
-  puts "Test rel2abs/abs2rel method"
-  [
-    '6..15',
-    'join(6..10,16..30)',
-    'complement(join(6..10,16..30))',
-    'join(complement(6..10),complement(16..30))',
-    'join(6..10,complement(16..30))',
-  ].each do |pos|
-    loc = Bio::Locations.new(pos)
-    p pos
-#   p loc
-    (1..21).each do |x|
-      print "absolute(#{x}) #=> ", y = loc.absolute(x), "\n"
-      print "relative(#{y}) #=> ", y ? loc.relative(y) : y, "\n"
-      print "absolute(#{x}, :aa) #=> ", y = loc.absolute(x, :aa), "\n"
-      print "relative(#{y}, :aa) #=> ", y ? loc.relative(y, :aa) : y, "\n"
-    end
-  end
-
-  pos = 'join(complement(6..10),complement(16..30))'
-  loc = Bio::Locations.new(pos)
-  print "pos         : "; p pos
-  print "`- loc[1]   : "; p loc[1]
-  print "   `- range : "; p loc[1].range
-
-  puts Bio::Location.new('5').<=>(Bio::Location.new('3'))
-end
 

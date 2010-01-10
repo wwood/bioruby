@@ -4,14 +4,15 @@
 # Copyright:: Copyright (C) 2005 Mitsuteru Nakao <n@bioruby.org>
 # License::   The Ruby License
 #
-#  $Id: test_ddbjxml.rb,v 1.4 2007/04/05 23:35:43 trevor Exp $ 
+#  $Id:$ 
 #
 
+# loading helper routine for testing bioruby
 require 'pathname'
-libpath = Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 4, 'lib')).cleanpath.to_s
-$:.unshift(libpath) unless $:.include?(libpath)
+load Pathname.new(File.join(File.dirname(__FILE__), ['..'] * 3,
+                            'bioruby_test_helper.rb')).cleanpath.to_s
 
-
+# libraries needed for the tests
 require 'test/unit'
 require 'bio/io/ddbjxml'
 
@@ -23,7 +24,7 @@ class TestDDBJXMLConstants < Test::Unit::TestCase
     constants = ["DDBJ", "TxSearch", "ClustalW", "PML", "Gib", "Fasta", 
                  "BASE_URI", "SRS", "SERVER_URI", "Gtop", "GetEntry",
                  "Blast", "RequestManager"].sort
-    assert_equal(constants, Bio::DDBJ::XML.constants.sort)
+    assert_equal(constants, Bio::DDBJ::XML.constants.sort.collect{|x| x.to_s})
   end
 
   def test_base_url

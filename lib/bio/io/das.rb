@@ -6,7 +6,7 @@
 #		Toshiaki Katayama <k@bioruby.org>
 # License::	The Ruby License
 #
-# $Id: das.rb,v 1.17 2007/07/16 18:06:12 k Exp $
+# $Id:$
 #
 #--
 # == TODO
@@ -47,7 +47,7 @@ class DAS
   # Returns an Array of Bio::DAS::DSN
   def get_dsn
     ary = []
-    result, = Bio::Command.post_form("#{@server}/das/dsn")
+    result = Bio::Command.post_form("#{@server}/das/dsn")
     doc = REXML::Document.new(result.body)
     doc.elements.each('/descendant::DSN') do |e|
       dsn = DSN.new
@@ -78,7 +78,7 @@ class DAS
     else
       src = dsn
     end
-    result, = Bio::Command.post_form("#{@server}/das/#{src}/entry_points")
+    result = Bio::Command.post_form("#{@server}/das/#{src}/entry_points")
     doc = REXML::Document.new(result.body)
     doc.elements.each('/descendant::ENTRY_POINTS') do |e|
       entry_point.href = e.attributes['href']
@@ -112,7 +112,7 @@ class DAS
       opts << "segment=#{s.entry_id}:#{s.start},#{s.stop}"
     end
 
-    result, = Bio::Command.post_form("#{@server}/das/#{dsn}/dna", opts)
+    result = Bio::Command.post_form("#{@server}/das/#{dsn}/dna", opts)
     doc = REXML::Document.new(result.body)
     doc.elements.each('/descendant::SEQUENCE') do |e|
       sequence = DNA.new
@@ -144,7 +144,7 @@ class DAS
       opts << "segment=#{s.entry_id}:#{s.start},#{s.stop}"
     end
 
-    result, = Bio::Command.post_form("#{@server}/das/#{dsn}/sequence", opts)
+    result = Bio::Command.post_form("#{@server}/das/#{dsn}/sequence", opts)
     doc = REXML::Document.new(result.body)
     doc.elements.each('/descendant::SEQUENCE') do |e|
       sequence = SEQUENCE.new
@@ -181,7 +181,7 @@ class DAS
       opts << "segment=#{s.entry_id}:#{s.start},#{s.stop}"
     end
 
-    result, = Bio::Command.post_form("#{@server}/das/#{dsn}/types", opts)
+    result = Bio::Command.post_form("#{@server}/das/#{dsn}/types", opts)
     doc = REXML::Document.new(result.body)
     doc.elements.each('/descendant::GFF') do |e|
       types.version = e.attributes['version']
@@ -232,7 +232,7 @@ class DAS
       opts << "group_id=#{gid}"
     end
 
-    result, = Bio::Command.post_form("#{@server}/das/#{dsn}/features", opts)
+    result = Bio::Command.post_form("#{@server}/das/#{dsn}/features", opts)
     doc = REXML::Document.new(result.body)
     doc.elements.each('/descendant::GFF') do |e|
       gff.version = e.attributes['version']
@@ -414,48 +414,4 @@ class DAS
 end
 
 end # module Bio
-
-
-if __FILE__ == $0
-
-# begin
-#   require 'pp'
-#   alias p pp
-# rescue LoadError
-# end
-
-  puts "### WormBase"
-  wormbase = Bio::DAS.new('http://www.wormbase.org/db/')
-
-  puts ">>> test get_dsn"
-  p wormbase.get_dsn
-
-  puts ">>> create segment obj Bio::DAS::SEGMENT.region('I', 1, 1000)"
-  seg = Bio::DAS::SEGMENT.region('I', 1, 1000)
-  p seg
-
-  puts ">>> test get_dna"
-  p wormbase.get_dna('elegans', seg)
-
-  puts "### test get_features"
-  p wormbase.get_features('elegans', seg)
-
-  puts "### KEGG DAS"
-  kegg_das = Bio::DAS.new("http://das.hgc.jp/cgi-bin/")
-
-  dsn_list = kegg_das.get_dsn
-  org_list = dsn_list.collect {|x| x.source}
-
-  puts ">>> dsn : entry_points"
-  org_list.each do |org|
-    print "#{org} : "
-    list = kegg_das.get_entry_points(org)
-    list.segments.each do |seg|
-      print " #{seg.entry_id}"
-    end
-    puts
-  end
-
-end
-
 

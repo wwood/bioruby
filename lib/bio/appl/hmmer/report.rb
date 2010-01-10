@@ -7,7 +7,7 @@
 #               Masashi Fujita <fujita@kuicr.kyoto-u.ac.jp>
 # License::     The Ruby License
 #
-# $Id: report.rb,v 1.13 2007/04/05 23:35:40 trevor Exp $
+# $Id:$
 #
 # == Description
 #
@@ -61,7 +61,7 @@ class HMMER
   #
   def self.reports(multiple_report_text)
     ary = []
-    multiple_report_text.each("\n//\n") do |report|
+    multiple_report_text.each_line("\n//\n") do |report|
       if block_given?
         yield Report.new(report)
       else
@@ -267,7 +267,7 @@ class HMMER
       program['license'] = program_data.split(/\n/)
       
       parameter = {}
-      parameter_data.each do |x|
+      parameter_data.each_line do |x|
         if /^(.+?):\s+(.*?)\s*$/ =~ x
           parameter[$1] = $2
         end
@@ -281,7 +281,7 @@ class HMMER
     # Bio::HMMER::Report#parse_query_info
     def parse_query_info(data)
       hash = {}
-      data.each do |x|
+      data.each_line do |x|
         if /^(.+?):\s+(.*?)\s*$/ =~ x
           hash[$1] = $2
         elsif /\s+\[(.+)\]/ =~ x
@@ -298,7 +298,7 @@ class HMMER
       data.sub!(/.+?---\n/m, '').chop!
       hits = []
       return hits if data == "\t[no hits above thresholds]\n"
-      data.each do |l|
+      data.each_line do |l|
         hits.push(Hit.new(l))
       end
       hits
@@ -311,7 +311,7 @@ class HMMER
       data.sub!(/.+?---\n/m, '').chop!
       hsps=[]
       return hsps if data == "\t[no hits above thresholds]\n"
-      data.each do |l|
+      data.each_line do |l|
         hsps.push(Hsp.new(l, is_hmmsearch))
       end
       return hsps
@@ -326,19 +326,19 @@ class HMMER
 
       statistical_detail = {}
       data.sub!(/(.+?)\n\n/m, '')
-      $1.each do |l|
+      $1.each_line do |l|
         statistical_detail[$1] = $2.to_f if /^\s*(.+?)\s*=\s*(\S+)/ =~ l
       end
         
       total_seq_searched = nil
       data.sub!(/(.+?)\n\n/m, '')
-      $1.each do |l|
+      $1.each_line do |l|
         total_seq_searched = $2.to_i if /^\s*(.+)\s*:\s*(\S+)/ =~ l
       end
         
       whole_seq_top_hits = {}
       data.sub!(/(.+?)\n\n/m, '')
-      $1.each do |l|
+      $1.each_line do |l|
         if /^\s*(.+?):\s*(\d+)\s*$/ =~ l
           whole_seq_top_hits[$1] = $2.to_i
         elsif /^\s*(.+?):\s*(\S+)\s*$/ =~ l
@@ -347,7 +347,7 @@ class HMMER
       end
         
       domain_top_hits = {}
-      data.each do |l|
+      data.each_line do |l|
         if /^\s*(.+?):\s*(\d+)\s*$/ =~ l
           domain_top_hits[$1] = $2.to_i
         elsif /^\s*(.+?):\s*(\S+)\s*$/ =~ l
@@ -566,7 +566,6 @@ end # class HMMER
 end # module Bio
 
 
-if __FILE__ == $0
 
 =begin
 
@@ -581,103 +580,4 @@ if __FILE__ == $0
   end
 
 =end
-
-  begin
-    require 'pp'
-    alias p pp
-  rescue LoadError
-  end
-
-  rep = Bio::HMMER::Report.new(ARGF.read)
-  p rep
-
-  indent = 18
-
-  puts "### hmmer result"
-  print "name : ".rjust(indent)
-  p  rep.program['name']
-  print "version : ".rjust(indent)
-  p rep.program['version']
-  print "copyright : ".rjust(indent)
-  p rep.program['copyright']
-  print "license : ".rjust(indent)
-  p rep.program['license']
-
-  print "HMM file : ".rjust(indent)
-  p rep.parameter['HMM file']
-  print "Sequence file : ".rjust(indent)
-  p rep.parameter['Sequence file']
-
-  print "Query sequence : ".rjust(indent)
-  p rep.query_info['Query sequence']
-  print "Accession : ".rjust(indent)
-  p rep.query_info['Accession']
-  print "Description : ".rjust(indent)
-  p rep.query_info['Description']
-
-  rep.each do |hit|
-    puts "## each hit"
-    print "accession : ".rjust(indent)
-    p [ hit.accession, hit.target_id, hit.hit_id, hit.entry_id ]
-    print "description : ".rjust(indent)
-    p [ hit.description, hit.definition ]
-    print "target_def : ".rjust(indent)
-    p hit.target_def
-    print "score : ".rjust(indent)
-    p [ hit.score, hit.bit_score ]
-    print "evalue : ".rjust(indent)
-    p hit.evalue
-    print "num : ".rjust(indent)
-    p hit.num
-
-    hit.each do |hsp|
-      puts "## each hsp"
-      print "accession : ".rjust(indent)
-      p [ hsp.accession, hsp.target_id ]
-      print "domain : ".rjust(indent)
-      p hsp.domain
-      print "seq_f : ".rjust(indent)
-      p hsp.seq_f
-      print "seq_t : ".rjust(indent)
-      p hsp.seq_t
-      print "seq_ft : ".rjust(indent)
-      p hsp.seq_ft
-      print "hmm_f : ".rjust(indent)
-      p hsp.hmm_f
-      print "hmm_t : ".rjust(indent)
-      p hsp.hmm_t
-      print "hmm_ft : ".rjust(indent)
-      p hsp.hmm_ft
-      print "score : ".rjust(indent)
-      p [ hsp.score, hsp.bit_score ]
-      print "evalue : ".rjust(indent)
-      p hsp.evalue
-      print "midline : ".rjust(indent)
-      p hsp.midline
-      print "hmmseq : ".rjust(indent)
-      p hsp.hmmseq
-      print "flatseq : ".rjust(indent)
-      p hsp.flatseq
-      print "query_frame : ".rjust(indent)
-      p hsp.query_frame
-      print "target_frame : ".rjust(indent)
-      p hsp.target_frame
-
-      print "query_seq : ".rjust(indent)
-      p hsp.query_seq		# hmmseq, flatseq
-      print "target_seq : ".rjust(indent)
-      p hsp.target_seq		# flatseq, hmmseq
-      print "target_from : ".rjust(indent)
-      p hsp.target_from		# seq_f, hmm_f
-      print "target_to : ".rjust(indent)
-      p hsp.target_to		# seq_t, hmm_t
-      print "query_from : ".rjust(indent)
-      p hsp.query_from		# hmm_f, seq_f
-      print "query_to : ".rjust(indent)
-      p hsp.query_to		# hmm_t, seq_t
-    end 
-  end
-
-end 
-
 

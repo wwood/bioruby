@@ -5,14 +5,13 @@
 # Copyright:: Copyright (c) 2005-2007 Midwinter Laboratories, LLC (http://midwinterlabs.com)
 # License::   The Ruby License
 #
-#  $Id: rebase.rb,v 1.8 2007/04/05 23:35:40 trevor Exp $
+#  $Id:$
 #
 
-autoload :YAML, 'yaml'
+require 'yaml'
+require 'bio/reference'
 
-module Bio #:nodoc:
-
-autoload :Reference, 'bio/reference'
+module Bio
 
 #
 # bio/db/rebase.rb - Interface for EMBOSS formatted REBASE files
@@ -41,7 +40,7 @@ autoload :Reference, 'bio/reference'
 # To easily get started with the data you can simply type this command
 # at your shell prompt:
 # 
-#   % wget ftp://ftp.neb.com/pub/rebase/emboss*
+#   % wget "ftp://ftp.neb.com/pub/rebase/emboss_*"
 # 
 # 
 # = Usage
@@ -196,7 +195,7 @@ class REBASE
   # * _none_
   # *Returns*:: +Array+ sorted enzyme names
   def enzymes
-    @data.keys.sort
+    @enzyme_names
   end
   
   # Check if supplied name is the name of an available enzyme
@@ -206,10 +205,7 @@ class REBASE
   # * +name+: Enzyme name
   # *Returns*:: +true/false+
   def enzyme_name?(name)
-    enzymes.each do |e|
-      return true if e.downcase == name.downcase
-    end
-    return false
+    @enzyme_names_downcased.include?(name.downcase)
   end
 
   # Save the current data
@@ -291,6 +287,8 @@ class REBASE
       d.references = []
     end
 
+    @enzyme_names = @data.keys.sort
+    @enzyme_names_downcased = @enzyme_names.map{|a| a.downcase}
     setup_enzyme_and_reference_association
   end
 
@@ -316,7 +314,7 @@ class REBASE
   def parse_enzymes( lines )
     data = {}
     return data if lines == nil
-    lines.each do |line|
+    lines.each_line do |line|
       next if line[0].chr == '#'
       line.chomp!
       
@@ -347,7 +345,7 @@ class REBASE
     h = {}
     references_left = 0
 
-    lines.each do |line|
+    lines.each_line do |line|
       next if line[0].chr == '#'  # Comment
       next if line[0..1] == '//'  # End of entry marker
       line.chomp!
@@ -389,7 +387,7 @@ class REBASE
   def parse_suppliers( lines )
     data = {}
     return data if lines == nil
-    lines.each do |line|
+    lines.each_line do |line|
       next if line[0].chr == '#'
       data[$1] = $2 if line =~ %r{(.+?)\s(.+)}
     end
