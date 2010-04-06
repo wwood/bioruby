@@ -175,7 +175,7 @@ class GO
   # $CVSROOT/go/gene-associations/gene_association.*
   #
   # Data parser for the gene_association go annotation.
-  # See also the file format http://www.geneontology.org/doc/GO.annotation.html#file
+  # See also the file format http://www.geneontology.org/GO.format.gaf-1_0.shtmls
   #
   # == Example
   #
