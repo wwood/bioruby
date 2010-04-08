@@ -265,12 +265,12 @@ class GO
       @db_object_symbol  = tmp[2]
       @qualifier         = tmp[3]  # 
       @goid              = tmp[4]
-      @db_reference      = tmp[5].split(/\|/)  #
+      @db_reference      = (tmp[5].nil? or tmp[5].empty?) ? [] : tmp[5].split(/\|/)  #
       @evidence          = tmp[6]
-      @with              = tmp[7].split(/\|/)  # 
+      @with              = (tmp[7].nil? or tmp[7].empty?) ? [] : tmp[7].split(/\|/)  # 
       @aspect            = tmp[8]
       @db_object_name    = tmp[9]  #
-      @db_object_synonym = tmp[10].split(/\|/) #
+      @db_object_synonym = (tmp[10].nil? or tmp[10].empty?) ? [] : tmp[10].split(/\|/) #
       @db_object_type    = tmp[11]
       @taxon             = tmp[12] # taxon:4932
       @date              = tmp[13] # 20010118
