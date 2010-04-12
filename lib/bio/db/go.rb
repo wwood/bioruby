@@ -5,7 +5,7 @@
 #               Mitsuteru C. Nakao <n@bioruby.org>
 # License::     The Ruby License
 #
-#  $Id: go.rb,v 1.11 2007/04/05 23:35:40 trevor Exp $
+#  $Id:$
 #
 # == Gene Ontology
 #
@@ -89,7 +89,7 @@ class GO
       stack    = []
       adj_list = []
       
-      str.each {|line|
+      str.each_line {|line|
         if /^!(.+?):\s+(\S.+)$/ =~ line  # Parsing head lines
           tag   = $1
           value = $2
@@ -175,7 +175,7 @@ class GO
   # $CVSROOT/go/gene-associations/gene_association.*
   #
   # Data parser for the gene_association go annotation.
-  # See also the file format http://www.geneontology.org/doc/GO.annotation.html#file
+  # See also the file format http://www.geneontology.org/GO.format.gaf-1_0.shtmls
   #
   # == Example
   #
@@ -198,13 +198,13 @@ class GO
     # Block is acceptable.  
     def self.parser(str)
       if block_given?
-        str.each(DELIMITER) {|line|
+        str.each_line(DELIMITER) {|line|
           next if /^!/ =~ line
           yield GeneAssociation.new(line)
         }
       else
         galist = []
-        str.each(DELIMITER) {|line|
+        str.each_line(DELIMITER) {|line|
           next if /^!/ =~ line
           galist << GeneAssociation.new(line)
         }
@@ -265,12 +265,12 @@ class GO
       @db_object_symbol  = tmp[2]
       @qualifier         = tmp[3]  # 
       @goid              = tmp[4]
-      @db_reference      = tmp[5].split(/\|/)  #
+      @db_reference      = (tmp[5].nil? or tmp[5].empty?) ? [] : tmp[5].split(/\|/)  #
       @evidence          = tmp[6]
-      @with              = tmp[7].split(/\|/)  # 
+      @with              = (tmp[7].nil? or tmp[7].empty?) ? [] : tmp[7].split(/\|/)  # 
       @aspect            = tmp[8]
       @db_object_name    = tmp[9]  #
-      @db_object_synonym = tmp[10].split(/\|/) #
+      @db_object_synonym = (tmp[10].nil? or tmp[10].empty?) ? [] : tmp[10].split(/\|/) #
       @db_object_type    = tmp[11]
       @taxon             = tmp[12] # taxon:4932
       @date              = tmp[13] # 20010118
@@ -411,71 +411,3 @@ end # module Bio
 
 
 
-if __FILE__ == $0
-
-  require 'net/http'
-
-  def wget(url)
-    if /http:\/\/(.+?)\// =~ url
-      host = $1
-      path = url[(url.index(host) + host.size)..url.size]
-    else
-      raise ArgumentError, "Invalid URL\n#{url}"
-    end
-
-    result = Net::HTTP.new(host).get(path).body
-  end
-
-
-
-  go_c_url = 'http://www.geneontology.org/ontology/component.ontology'
-  ga_url = 'http://www.geneontology.org/gene-associations/gene_association.sgd.gz'
-  e2g_url = 'http://www.geneontology.org/external2go/spkw2go'
-
-
-
-  puts "\n #==> Bio::GO::Ontology"
-  p go_c_url
-  component_ontology = wget(go_c_url)
-  comp = Bio::GO::Ontology.new(component_ontology)
-
-  [['0003673', '0005632'],
-    ['0003673', '0005619'],
-    ['0003673', '0004649']].each {|pair|
-    puts
-    p pair
-    p [:pair, pair.map {|i| [comp.id2term[i], comp.goid2term(i)] }]
-    puts "\n #==> comp.bfs_shortest_path(pair[0], pair[1])"
-    p comp.bfs_shortest_path(pair[0], pair[1])
-  }
-
-
-  puts "\n #==> Bio::GO::External2go"
-  p e2g_url
-  spkw2go = Bio::GO::External2go.new(wget(e2g_url))
-
-  puts "\n #==> spkw2go.db"
-  p spkw2go.db
-
-  puts "\n #==> spkw2go[1]"
-  p spkw2go[1]
-
-
-
-  require 'zlib'
-  puts "\n #==> Bio::GO::GeenAssociation"
-  p ga_url
-  ga = Zlib::Inflate.inflate(wget(ga_url))
-  ga = Bio::GO::GeneAssociation.parser(ga)
-
-  puts "\n #==> ga.size"
-  p ga.size
-
-  puts "\n #==> ga[100]"
-  p ga[100]
-
-
-
-
-  
-end

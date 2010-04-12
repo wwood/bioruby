@@ -1,0 +1,33 @@
+!CVS Version: Revision: 1.146 $
+!GOC Validation Date: 03/22/2010 $
+!Submission Date: 3/22/2010
+!
+! The above "Submission Date" is when the annotation project provided
+! this file to the Gene Ontology Consortium (GOC).  The "GOC Validation
+! Date" indicates when this file was last changed as a result of a GOC
+! validation and filtering process.  The "CVS Version" above is the
+! GOC version of this file.
+!
+! Note: The contents of this file may differ from that submitted to the
+! GOC. The identifiers and syntax of the file have been checked, rows of
+! data not meeting the standards set by the GOC have been removed. This
+! file may also have annotations removed because the annotations for the
+! listed Taxonomy identifier are only allowed in a file provided by
+! another annotation project.  The original submitted file is available from:
+!  http://www.geneontology.org/gene-associations/submission/
+!
+! For information on which taxon are allowed in which files please see:
+!  http://www.geneontology.org/GO.annotation.shtml#script
+!
+!Project_name: WormBase
+!URL: http://www.wormbase.org/
+!Contact Email: webmaster@www.wormbase.org
+!Funding: US National Institutes of Health and the British Medical Research Council
+!
+!gaf-version: 1.0
+!Version: $Revision: $
+!Organism: Caenorhabditis elegans
+!DataBase_Project_Name: WormBase WS211/WS213
+WB	WBGene00000001	aap-1		GO:0005515	PMID:12520011|PMID:12654719	IEA	INTERPRO:IPR000980	F		Y110A7A.10	gene	taxon:6239	20100128	WB
+WB	WBGene00000001	aap-1		GO:0005942	PMID:12520011|PMID:12654719	IEA	INTERPRO:IPR001720	C		Y110A7A.10	gene	taxon:6239	20100128	WB
+WB	WBGene00000001	aap-1		GO:0035014	PMID:12520011|PMID:12654719	IEA	INTERPRO:IPR001720	F		Y110A7A.10	gene	taxon:6239	20100128	WB

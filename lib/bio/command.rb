@@ -130,8 +130,8 @@ module Command
     [ arg0 ]
   end
 
-  # Executes the program.  Automatically select popen for Windows
-  # environment and fork for the others.
+  # Executes the program. Automatically select popen for Ruby 1.9 or
+  # Windows environment and fork for the others.
   # A block must be given. An IO object is passed to the block.
   #
   # Available options:
@@ -143,6 +143,9 @@ module Command
   # * (optional) _options_: Hash
   # *Returns*:: (undefined)
   def call_command(cmd, options = {}, &block) #:yields: io
+    if RUBY_VERSION >= "1.9.0" then
+      return call_command_popen(cmd, options, &block)
+    end
     case RUBY_PLATFORM
     when /mswin32|bccwin32/
       call_command_popen(cmd, options, &block)
@@ -151,14 +154,43 @@ module Command
     end
   end
 
+  # This method is internally called from the call_command method.
+  # In normal case, use call_command, and do not call this method directly.
+  #
   # Executes the program via IO.popen for OS which doesn't support fork.
   # A block must be given. An IO object is passed to the block.
+  #
+  # See the document of call_command for available options.
+  #
+  # Note for Ruby 1.8:
+  # In Ruby 1.8, although shell unsafe characters are escaped.
+  # If inescapable characters exists, it raises RuntimeError.
+  # So, call_command_fork is normally recommended.
+  #
+  # Note for Ruby 1.9:
+  # In Ruby 1.9, call_command_popen is safe and robust enough, and is the
+  # recommended way, because IO.popen is improved to get a command-line
+  # as an array without calling shell.
+  #
   # ---
   # *Arguments*:
   # * (required) _cmd_: Array containing String objects
   # * (optional) _options_: Hash
   # *Returns*:: (undefined)
   def call_command_popen(cmd, options = {})
+    if RUBY_VERSION >= "1.9.0" then
+      # For Ruby 1.9 or later, using command line array with options.
+      dir = options[:chdir]
+      cmd = safe_command_line_array(cmd)
+      if dir then
+        cmd = cmd + [ { :chdir => dir } ]
+      end
+      r = IO.popen(cmd, "r+") do |io|
+        yield io
+      end
+      return r
+    end
+    # For Ruby 1.8, using command line string.
     str = make_command_line(cmd)
     # processing options
     if dir = options[:chdir] then
@@ -182,11 +214,24 @@ module Command
     end
   end
 
+  # This method is internally called from the call_command method.
+  # In normal case, use call_command, and do not call this method directly.
+  #
   # Executes the program via fork (by using IO.popen("-")) and exec.
   # A block must be given. An IO object is passed to the block.
   #
-  # From the view point of security, this method is recommended
-  # rather than call_command_popen.
+  # See the document of call_command for available options.
+  #
+  # Note for Ruby 1.8:
+  # In Ruby 1.8, from the view point of security, this method is recommended
+  # rather than call_command_popen. However, this method might have problems
+  # with multi-threads.
+  #
+  # Note for Ruby 1.9:
+  # In Ruby 1.9, this method can not be used, because Thread.critical is
+  # removed. In Ruby 1.9, call_command_popen is safe and robust enough, and
+  # is the recommended way, because IO.popen is improved to get a
+  # command-line as an array without calling shell.
   #
   # ---
   # *Arguments*:
@@ -196,12 +241,16 @@ module Command
   def call_command_fork(cmd, options = {})
     dir = options[:chdir]
     cmd = safe_command_line_array(cmd)
+    tc, Thread.critical = Thread.critical, true
     IO.popen("-", "r+") do |io|
       if io then
         # parent
+        Thread.critical = tc
         yield io
       else
         # child
+        Thread.critical = true # for safety, though already true
+        GC.disable
         # chdir to options[:chdir] if available
         begin
           Dir.chdir(dir) if dir
@@ -240,7 +289,8 @@ module Command
   # waits the program termination, and returns the output data printed to the
   # standard output as a string.
   # 
-  # Automatically select popen for Windows environment and fork for the others.
+  # Automatically select popen for Ruby 1.9 or Windows environment and
+  # fork for the others.
   #
   # Available options:
   #   :chdir => "path" : changes working directory to the specified path.
@@ -252,6 +302,9 @@ module Command
   # * (optional) _options_: Hash
   # *Returns*:: String or nil
   def query_command(cmd, query = nil, options = {})
+    if RUBY_VERSION >= "1.9.0" then
+      return query_command_popen(cmd, query, options)
+    end
     case RUBY_PLATFORM
     when /mswin32|bccwin32/
       query_command_popen(cmd, query, options)
@@ -260,11 +313,17 @@ module Command
     end
   end
 
+  # This method is internally called from the query_command method.
+  # In normal case, use query_command, and do not call this method directly.
+  #
   # Executes the program with the query (String) given to the standard input,
   # waits the program termination, and returns the output data printed to the
   # standard output as a string.
   #
-  # IO.popen is used for OS which doesn't support fork.
+  # See the document of query_command for available options.
+  #
+  # See the document of call_command_popen for the security and Ruby
+  # version specific issues.
   #
   # ---
   # *Arguments*:
@@ -283,14 +342,19 @@ module Command
     ret
   end
 
+  # This method is internally called from the query_command method.
+  # In normal case, use query_command, and do not call this method directly.
+  #
   # Executes the program with the query (String) given to the standard input,
   # waits the program termination, and returns the output data printed to the
   # standard output as a string.
   #
   # Fork (by using IO.popen("-")) and exec is used to execute the program.
   #
-  # From the view point of security, this method is recommended
-  # rather than query_command_popen.
+  # See the document of query_command for available options.
+  #
+  # See the document of call_command_fork for the security and Ruby
+  # version specific issues.
   #
   # ---
   # *Arguments*:
@@ -357,22 +421,33 @@ module Command
 
   # Backport of Dir.mktmpdir in Ruby 1.9.
   #
-  # Same as Dir.mktmpdir(prefix_suffix) in Ruby 1.9 except that
-  # prefix must be a String, nil, or omitted.
+  # Same as Dir.mktmpdir(prefix_suffix) in Ruby 1.9.
   #
   # ---
   # *Arguments*:
-  # * (optional) _prefix_: String
+  # * (optional) <em>prefix_suffix</em>: String (or Array, etc.)
+  # * (optional) <em>tmpdir</em>: String: temporary directory's path
   # 
-  def mktmpdir(prefix = 'd', tmpdir = nil, &block)
-    prefix = prefix.to_str
+  def mktmpdir(prefix_suffix = nil, tmpdir = nil, &block)
     begin
-      Dir.mktmpdir(prefix, tmpdir, &block)
+      Dir.mktmpdir(prefix_suffix, tmpdir, &block)
     rescue NoMethodError
-      suffix = ''
-      # backported from Ruby 1.9.0.
-      # ***** Below is excerpted from Ruby 1.9.0's lib/tmpdir.rb ****
+      # backported from Ruby 1.9.2-preview1.
+      # ***** Below is excerpted from Ruby 1.9.2-preview1's lib/tmpdir.rb ****
       # ***** Be careful about copyright. ****
+      case prefix_suffix
+      when nil
+        prefix = "d"
+        suffix = ""
+      when String
+        prefix = prefix_suffix
+        suffix = ""
+      when Array
+        prefix = prefix_suffix[0]
+        suffix = prefix_suffix[1]
+      else
+        raise ArgumentError, "unexpected prefix_suffix: #{prefix_suffix.inspect}"
+      end
       tmpdir ||= Dir.tmpdir
       t = Time.now.strftime("%Y%m%d")
       n = nil
@@ -396,9 +471,82 @@ module Command
       else
         path
       end
-      # ***** Above is excerpted from Ruby 1.9.0's lib/tmpdir.rb ****
+      # ***** Above is excerpted from Ruby 1.9.2-preview1's lib/tmpdir.rb ****
     end
   end
+
+  # Bio::Command::Tmpdir is a wrapper class to handle temporary directory
+  # like Tempfile class. A temporary directory is created when the object
+  # of the class is created, and automatically removed when the object
+  # is destroyed by GC.
+  #
+  # BioRuby library internal use only.
+  class Tmpdir
+
+    # Returns finalizer object for Tmpdir class.
+    # Internal use only. Users should not call this method directly.
+    # 
+    # Acknowledgement: The essense of the code is taken from tempfile.rb
+    # in Ruby 1.8.7.
+    #
+    # ---
+    # *Arguments*:
+    # * (required) _data_: Array containing internal data
+    # *Returns*:: Proc object
+    def self.callback(data)
+      pid = $$
+      lambda {
+        path, = *data
+        if pid == $$
+          $stderr.print "removing ", path, " ..." if $DEBUG
+          if path and !path.empty? and
+              File.directory?(path) and
+              !File.symlink?(path) then
+            Bio::Command.remove_entry_secure(path)
+            $stderr.print "done\n" if $DEBUG
+          else
+            $stderr.print "skipped\n" if $DEBUG
+          end
+        end
+      }
+    end
+
+    # Creates a new Tmpdir object.
+    # The arguments are the same as Bio::Command.mktmpdir.
+    #
+    # ---
+    # *Arguments*:
+    # * (optional) <em>prefix_suffix</em>: String (or Array)
+    # * (optional) <em>tmpdir</em>: String: temporary directory's path
+    # *Returns*:: Tmpdir object
+    def initialize(prefix_suffix = nil, tmpdir = nil)
+      @data = []
+      @clean_proc = self.class.callback(@data)
+      ObjectSpace.define_finalizer(self, @clean_proc)
+      @data.push(@path = Bio::Command.mktmpdir(prefix_suffix, tmpdir).freeze)
+    end
+
+    # Path to the temporay directory
+    #
+    # *Returns*:: String
+    def path
+      @path || raise(IOError, 'removed temporary directory')
+    end
+
+    # Removes the temporary directory.
+    #
+    # *Returns*:: nil
+    def close!
+      # raise error if path is nil
+      self.path
+      # finilizer object is called to remove the directory
+      @clean_proc.call
+      # unregister finalizer
+      ObjectSpace.undefine_finalizer(self)
+      # @data and @path is removed
+      @data = @path = nil
+    end
+  end #class Tmpdir
 
   # Same as OpenURI.open_uri(uri).read
   # and 
